@@ -1,32 +1,45 @@
-# React + TypeScript + Vite
+# IRCC News Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A React SPA for browsing Canadian immigration data: IRCC news, Express Entry draw history (with a dedicated trend-analysis page), and official speeches. Consumes the public read-only JSON API served by [IRCCBackend](https://github.com/mattazz/IRCCBackend).
 
-Currently, two official plugins are available:
+See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for how the codebase is put together, and [`docs/DRAW_ANALYSIS_PLAN.md`](./docs/DRAW_ANALYSIS_PLAN.md) for the draw-analysis page's design decisions and build history.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+React 19 + TypeScript, Vite, Tailwind CSS v4, react-router-dom, Recharts. Linted with oxlint, tested with Vitest + React Testing Library.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+cp .env.example .env   # set VITE_API_BASE_URL to your IRCCBackend instance
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Requires a running instance of [IRCCBackend](https://github.com/mattazz/IRCCBackend) (defaults to `http://localhost:3000`) — this repo has no backend of its own.
+
+## Scripts
+
+| Command | Does |
+|---|---|
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Type-check (`tsc -b`) and build for production |
+| `npm run preview` | Preview the production build locally |
+| `npm run lint` | Run oxlint |
+| `npm test` | Run the test suite once |
+| `npm run test:watch` | Run the test suite in watch mode |
+
+## Environment variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `VITE_API_BASE_URL` | Base URL of the IRCCBackend API | `http://localhost:3000` |
+
+## Pages
+
+- **`/`** — News, latest draws (with a class filter), and speeches, each in its own section.
+- **`/draws`** — Full Express Entry draw history: CRS/invitations trend chart, rolling-average overlay, multi-class comparison, date-range brush, summary stats, and per-draw detail cards.
+
+## Project status
+
+Actively developed. All five phases of the draw-analysis page's [dev plan](./docs/DRAW_ANALYSIS_PLAN.md) are complete; one manual check (brush touch-drag on a real device) is still outstanding.
