@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { useApiData } from '../hooks/useApiData'
 import { Section } from './Section'
@@ -23,18 +24,23 @@ export function DrawsSection() {
       isEmpty={(data?.length ?? 0) === 0}
       emptyMessage="No draws found for this class."
       action={
-        <select
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value as ClassCode | typeof ALL)}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-        >
-          <option value={ALL}>All classes</option>
-          {CLASS_CODES.map((code) => (
-            <option key={code} value={code}>
-              {CLASS_NAMES[code]}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value as ClassCode | typeof ALL)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option value={ALL}>All classes</option>
+            {CLASS_CODES.map((code) => (
+              <option key={code} value={code}>
+                {CLASS_NAMES[code]}
+              </option>
+            ))}
+          </select>
+          <Link to="/draws" className="whitespace-nowrap text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+            Full draw analysis →
+          </Link>
+        </div>
       }
     >
       <div className="overflow-x-auto">
