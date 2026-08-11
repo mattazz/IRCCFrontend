@@ -4,7 +4,7 @@ How IRCCFrontend is put together, for picking the project back up without re-rea
 
 ## What this is
 
-A React SPA that consumes [IRCCBackend](https://github.com/mattazz/IRCCBackend)'s public read-only JSON API (see [IRCCBackend/docs/API.md](../../IRCCBackend/docs/API.md)) and presents Canadian immigration data: IRCC news, Express Entry draw history, and government speeches. Two pages today: a home page with three at-a-glance sections, and a dedicated draw-analysis page with charting/comparison tools (see [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for how that page was built).
+A React SPA that consumes [IRCCBackend](https://github.com/mattazz/IRCCBackend)'s public read-only JSON API (see [IRCCBackend/docs/API.md](../../IRCCBackend/docs/API.md)) and presents Canadian immigration data: IRCC news, Express Entry draw history, and government speeches. Three pages today: a home page with three at-a-glance sections, a dedicated draw-analysis page with charting/comparison tools (see [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for how that page was built), and a click-through FAQ page.
 
 This repo has no server of its own — it's a static SPA (Vite build) that talks to the backend over HTTP. No SSR, no API routes, no database access.
 
@@ -33,6 +33,9 @@ src/
   pages/
     HomePage.tsx            Composes the three home sections
     DrawAnalysisPage.tsx     /draws - chart, filters, comparison, stats, detail cards (the bulk of the app's logic)
+    FaqPage.tsx              /faq - click-through decision-tree FAQ, content from src/data/faqContent.ts
+  data/
+    faqContent.ts            FaqNode tree - immigration FAQ content, ported from IRCCBackend's Telegram bot
   utils/
     draws.ts                filterDrawsByClass - client-side class filtering
     rollingAverage.ts        computeRollingAverage - TS port of the backend's rolling-average algorithm
@@ -74,6 +77,12 @@ There is no client-side cache or global store: each component/page fetches what 
 - **The Recharts `<Brush>`** drives both the visible date range and (indirectly) the stats panel and draw cards below the chart — dragging it doesn't refetch anything, it just narrows what the existing derived data renders.
 
 See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase history.
+
+## The FAQ page
+
+`FaqPage.tsx` renders a generic tree navigator over `src/data/faqContent.ts` (a `FaqNode` tree: `label`, optional `prompt`/`content`/`link`, optional `children`). Local `path: string[]` state tracks the ids from root to the current node; the page derives the breadcrumb trail, current node, and available actions (child buttons, Back, Main Menu) from that path alone - there's no per-node routing or hardcoded "back target" like the Telegram bot has, one generic component handles every depth.
+
+The content itself was ported **verbatim** from IRCCBackend's Telegram bot (`app.js`'s `/faq` command and `callback_query` handler) rather than freshly written, specifically so the two surfaces don't drift into independently-maintained (and potentially conflicting) copies of immigration guidance. If the bot's FAQ content changes, `faqContent.ts` needs a matching manual update - same kind of cross-repo sync burden as `types/api.ts`, just for content instead of response shapes.
 
 ## Testing
 

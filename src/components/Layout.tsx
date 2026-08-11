@@ -26,6 +26,9 @@ export function Layout({ children }: { children: ReactNode }) {
             <NavLink to="/draws" className={navLinkClass}>
               Draw Analysis
             </NavLink>
+            <NavLink to="/faq" className={navLinkClass}>
+              FAQ
+            </NavLink>
           </nav>
         </div>
       </header>
