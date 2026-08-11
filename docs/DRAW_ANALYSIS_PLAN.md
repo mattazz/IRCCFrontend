@@ -52,11 +52,13 @@ One Recharts v3 gotcha hit along the way: the `Tooltip`'s `content` prop wanted 
 
 Verified live: rolling average toggle, window changes, and combined with "Both" metric mode (rolling average + CRS + invitations, three lines, dual axis, legend) all render correctly with zero console errors.
 
-### Phase 3 — Comparison & filtering
-- [ ] Multi-class overlay: select 2+ classes, render as separate colored series with a legend
-- [ ] Date range selection via drag-to-select directly on the chart (Recharts' `<Brush>` component) rather than separate from/to date pickers
-- [ ] "All classes" combined view as an option, not just single/multi specific-class views
-- [ ] Draw detail cards below the chart, one per draw within the current date-range selection (defaulting to the full visible range if nothing's selected) - shows the fields the line chart can't: drawNumber, subclass, and anything else in the `Draw` type not already surfaced in the tooltip
+### Phase 3 — Comparison & filtering ✅
+- [x] Multi-class overlay: click-to-toggle chips for all 11 classes (plus "All"/"Reset"), each rendered as its own colored line (`CLASS_COLORS` in `src/pages/DrawAnalysisPage.tsx`). Chart data is merged by date across selected classes (`${classCode}_crs` keys) rather than duplicating the chart's rendering logic for the single-class case. Comparing 2+ classes forces the metric to CRS-only (Invitations/Both disabled, with a tooltip explaining why) - overlaying two metrics across multiple classes would need multiple axes and isn't legible
+- [x] Date range selection via Recharts' `<Brush>`, controlled (`startIndex`/`endIndex`) so it can be reset programmatically when the class selection changes. Automated drag-simulation couldn't confirm this one (recharts v3's internal Redux-backed drag state didn't respond to synthetically dispatched mouse/pointer events) - **manually tested by you and confirmed working**.
+- [x] "All classes" combined view: the "All" chip selects all 11 classes at once, reusing the multi-class overlay path rather than being a separate view
+- [x] Draw detail cards below the chart/stats, one per draw within the current brush selection (all selected classes' draws if no selection is active), newest first, scrollable. Each card shows drawNumber, date, class, subclass (when it differs from class), CRS, and invitations - the fields the tooltip doesn't carry. Cards are tagged with the class they were matched under (`TaggedDraw`) rather than reverse-parsing the raw class string, since a draw's class text doesn't reliably map back to a single `ClassCode`
+
+Also fixed along the way: the stats panel now recomputes from the brush-selected range (falling back to the full selection when nothing's brushed) instead of always reflecting the full class filter - this is what makes "drag to select a range, see the stats update" actually work. Stats de-duplicate by `drawNumber` in case a draw's class text matches more than one selected class filter (rare, but would otherwise double-count it).
 
 ### Phase 4 — Polish & export
 - [ ] CSV export of the currently-filtered/visible data
@@ -72,3 +74,15 @@ Verified live: rolling average toggle, window changes, and combined with "Both" 
 
 - Server-side rendering / SEO for this page - it's an interactive tool, not content that needs to be crawlable.
 - Persisting a user's filter/window selections (e.g. to a URL query string or local storage) - nice-to-have, not blocking for a first version.
+
+## Mobile support
+
+The page needs to work on mobile, not just desktop - this applies across every phase above, not just the Phase 4 "responsive layout" line item. Things to check specifically once the current build (through Phase 3) gets a mobile pass:
+
+- **Class chips**: 11 chips + "All"/"Reset" already wrap via `flex-wrap` on desktop: confirm they stay tappable (not too small a hit target) and legible at phone widths.
+- **Brush drag**: Recharts' `<Brush>` is mouse-drag-oriented by default; confirm it responds to touch drag on a real device/touch emulation, not just desktop mouse. This is a second, separate reason to manually verify the brush (see Phase 3) beyond the automated-testing gap noted there.
+- **Dual-axis charts** ("Both" metric, single-class only): two Y-axes plus a legend take up real width - check they don't crowd out the plot area on narrow screens.
+- **Draw cards grid**: already responsive (`grid-cols-1` up through `lg:grid-cols-3`) - confirm the `max-h-[480px]` scroll area is usable with touch scrolling and doesn't fight the page's own scroll.
+- **Stats panel**: `grid-cols-2` on mobile widths already - confirm the 5th tile (Total invitations) doesn't look orphaned on its own row.
+
+Worth a dedicated pass (likely folded into Phase 4's existing "responsive layout" item) rather than assuming desktop-verified means mobile-verified.

@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
+  Brush,
   CartesianGrid,
   Legend,
   Line,
@@ -18,10 +19,32 @@ import { computeRollingAverage } from '../utils/rollingAverage'
 import { CLASS_CODES, CLASS_NAMES, type ClassCode, type Draw } from '../types/api'
 
 type Metric = 'crs' | 'invitations' | 'both'
+interface ChartRow {
+  date: string
+  [key: string]: string | number | undefined
+}
+// Tags each draw with the class code it was matched under (a draw can appear once per
+// selected class it matches, if its class field mentions more than one), so cards/colors
+// don't need to reverse-engineer a class code from the raw class text.
+type TaggedDraw = Draw & { matchedClassCode: ClassCode }
 
-const CRS_COLOR = '#3b82f6' // blue-500
 const INVITATIONS_COLOR = '#10b981' // emerald-500
-const ROLLING_AVERAGE_COLOR = '#f59e0b' // amber-500
+
+// One color per class, reused for its line, rolling-average line, and chip. CEC stays blue
+// to match the chart's original single-class default.
+const CLASS_COLORS: Record<ClassCode, string> = {
+  CEC: '#3b82f6', // blue-500
+  FSW: '#10b981', // emerald-500
+  FST: '#f59e0b', // amber-500
+  PNP: '#ef4444', // red-500
+  FLP: '#8b5cf6', // violet-500
+  TO: '#06b6d4', // cyan-500
+  HO: '#ec4899', // pink-500
+  STEM: '#84cc16', // lime-500
+  GEN: '#f97316', // orange-500
+  TRAN: '#6366f1', // indigo-500
+  AGRI: '#14b8a6', // teal-500
+}
 
 const METRIC_OPTIONS: { value: Metric; label: string }[] = [
   { value: 'crs', label: 'CRS score' },
@@ -31,34 +54,19 @@ const METRIC_OPTIONS: { value: Metric; label: string }[] = [
 
 const WINDOW_OPTIONS = [3, 4, 6, 8, 12]
 
-interface ChartPoint {
-  date: string
-  crs: number
-  invitations: number
-  drawSize: string
-  class: string
-  rollingAverage?: number
-}
-
-function ChartTooltip({ active, payload }: TooltipContentProps) {
+function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload?.length) return null
-  const point = payload[0].payload as ChartPoint
+  const numericEntries = payload.filter((entry) => typeof entry.value === 'number')
+  if (numericEntries.length === 0) return null
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-3 text-sm shadow-md dark:border-slate-700 dark:bg-slate-800">
-      <p className="font-medium text-slate-900 dark:text-slate-100">{point.date}</p>
-      <p className="text-slate-500 dark:text-slate-400">{point.class}</p>
-      <p className="mt-1 text-slate-700 dark:text-slate-200">
-        CRS: <span className="font-semibold">{point.crs}</span>
-      </p>
-      <p className="text-slate-700 dark:text-slate-200">
-        Invitations: <span className="font-semibold">{point.drawSize}</span>
-      </p>
-      {point.rollingAverage !== undefined && (
-        <p className="text-slate-700 dark:text-slate-200">
-          Rolling avg: <span className="font-semibold">{point.rollingAverage}</span>
+      <p className="font-medium text-slate-900 dark:text-slate-100">{label}</p>
+      {numericEntries.map((entry) => (
+        <p key={String(entry.dataKey)} className="mt-1" style={{ color: entry.color }}>
+          {entry.name}: <span className="font-semibold">{entry.value}</span>
         </p>
-      )}
+      ))}
     </div>
   )
 }
@@ -72,125 +80,239 @@ function StatTile({ label, value }: { label: string; value: string }) {
   )
 }
 
+function DrawCard({ draw }: { draw: TaggedDraw }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-slate-900 dark:text-slate-100">Draw #{draw.drawNumber}</span>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
+          style={{ backgroundColor: CLASS_COLORS[draw.matchedClassCode] }}
+        >
+          {draw.date}
+        </span>
+      </div>
+      <p className="mt-1 text-slate-600 dark:text-slate-300">{draw.class}</p>
+      {draw.subclass !== draw.class && (
+        <p className="text-xs text-slate-500 dark:text-slate-400">{draw.subclass}</p>
+      )}
+      <div className="mt-2 flex gap-4 text-xs text-slate-600 dark:text-slate-300">
+        <span>
+          CRS: <span className="font-semibold text-slate-900 dark:text-slate-100">{draw.crs}</span>
+        </span>
+        <span>
+          Invitations: <span className="font-semibold text-slate-900 dark:text-slate-100">{draw.drawSize}</span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function DrawAnalysisPage() {
-  const [selectedClass, setSelectedClass] = useState<ClassCode>('CEC')
+  const [selectedClasses, setSelectedClasses] = useState<ClassCode[]>(['CEC'])
   const [metric, setMetric] = useState<Metric>('crs')
   const [showRollingAverage, setShowRollingAverage] = useState(false)
   const [rollingWindow, setRollingWindow] = useState(4)
+  const [brushRange, setBrushRange] = useState<{ startIndex: number; endIndex: number } | null>(null)
 
-  // Fetched once - the full history doesn't depend on which class/metric is selected;
-  // filtering and metric selection happen client-side so switching is instant, no refetch.
-  const fetcher = useCallback(() => api.draws.all(), [])
-  const { data, error, loading } = useApiData<Draw[]>(fetcher, [])
+  // Fetched once - the full history doesn't depend on which class(es)/metric are selected;
+  // filtering, comparison, and metric selection all happen client-side so switching is
+  // instant, no refetch.
+  const { data, error, loading } = useApiData<Draw[]>(() => api.draws.all(), [])
 
-  const showCrs = metric === 'crs' || metric === 'both'
-  const showInvitations = metric === 'invitations' || metric === 'both'
+  const isMultiClass = selectedClasses.length > 1
+  // Comparing invitations (or both metrics) across multiple classes at once would need a
+  // second axis per class - not legible. Multi-class comparison is CRS-only.
+  const effectiveMetric: Metric = isMultiClass ? 'crs' : metric
+  const showCrs = effectiveMetric === 'crs' || effectiveMetric === 'both'
+  const showInvitations = !isMultiClass && (effectiveMetric === 'invitations' || effectiveMetric === 'both')
   const rollingAverageActive = showRollingAverage && showCrs
 
-  const filteredDraws = useMemo(() => {
+  function toggleClass(cls: ClassCode) {
+    setSelectedClasses((prev) => {
+      if (prev.includes(cls)) {
+        const next = prev.filter((c) => c !== cls)
+        return next.length === 0 ? prev : next // always keep at least one selected
+      }
+      return [...prev, cls]
+    })
+  }
+
+  // The brush's start/endIndex point into chartData - reset the selection whenever the
+  // underlying rows change shape, so a stale index range can't point at the wrong dates.
+  useEffect(() => {
+    setBrushRange(null)
+  }, [selectedClasses, rollingAverageActive, rollingWindow])
+
+  const chartData: ChartRow[] = useMemo(() => {
     if (!data) return []
-    return filterDrawsByClass(data, selectedClass)
-  }, [data, selectedClass])
+    const byDate = new Map<string, ChartRow>()
+    for (const cls of selectedClasses) {
+      const classDraws = filterDrawsByClass(data, cls)
+      const rollingByDate = rollingAverageActive
+        ? new Map(computeRollingAverage(classDraws, rollingWindow).map((p) => [p.date, p.average]))
+        : new Map<string, number>()
+      for (const draw of classDraws) {
+        const entry = byDate.get(draw.date) ?? { date: draw.date }
+        entry[`${cls}_crs`] = Number(draw.crs)
+        entry[`${cls}_invitations`] = Number(draw.drawSize.replace(/,/g, ''))
+        const rollingValue = rollingByDate.get(draw.date)
+        if (rollingValue !== undefined) entry[`${cls}_rollingAverage`] = rollingValue
+        byDate.set(draw.date, entry)
+      }
+    }
+    return Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  }, [data, selectedClasses, rollingAverageActive, rollingWindow])
 
-  const rollingAverageByDate = useMemo(() => {
-    if (!rollingAverageActive) return new Map<string, number>()
-    const points = computeRollingAverage(filteredDraws, rollingWindow)
-    return new Map(points.map((point) => [point.date, point.average]))
-  }, [filteredDraws, rollingWindow, rollingAverageActive])
+  // Flat list of actual draws (not merged-by-date rows) across all selected classes, for the
+  // stats panel and detail cards - both want real Draw records, not chart-shaped rows. Tagged
+  // with the class code each was matched under (see TaggedDraw) so cards can show the right
+  // color without reverse-parsing the raw class text.
+  const allSelectedDraws = useMemo<TaggedDraw[]>(() => {
+    if (!data) return []
+    return selectedClasses
+      .flatMap((cls) => filterDrawsByClass(data, cls).map((draw) => ({ ...draw, matchedClassCode: cls })))
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+  }, [data, selectedClasses])
 
-  const chartData: ChartPoint[] = useMemo(
-    () =>
-      filteredDraws.map((draw) => ({
-        date: draw.date,
-        crs: Number(draw.crs),
-        invitations: Number(draw.drawSize.replace(/,/g, '')),
-        drawSize: draw.drawSize,
-        class: draw.class,
-        rollingAverage: rollingAverageByDate.get(draw.date),
-      })),
-    [filteredDraws, rollingAverageByDate],
-  )
+  const visibleDraws = useMemo(() => {
+    if (!brushRange || chartData.length === 0) return allSelectedDraws
+    const startDate = chartData[brushRange.startIndex]?.date
+    const endDate = chartData[brushRange.endIndex]?.date
+    if (!startDate || !endDate) return allSelectedDraws
+    return allSelectedDraws.filter((draw) => draw.date >= startDate && draw.date <= endDate)
+  }, [allSelectedDraws, brushRange, chartData])
 
   const stats = useMemo(() => {
-    if (chartData.length === 0) return null
-    const crsValues = chartData.map((d) => d.crs)
-    const invitationsValues = chartData.map((d) => d.invitations)
+    if (visibleDraws.length === 0) return null
+    // De-duplicated by drawNumber: a draw whose class field mentions more than one selected
+    // class appears once per match in visibleDraws (intentional, for the cards), but should
+    // only count once here.
+    const uniqueDraws = Array.from(new Map(visibleDraws.map((d) => [d.drawNumber, d])).values())
+    const crsValues = uniqueDraws.map((d) => Number(d.crs))
+    const invitationsValues = uniqueDraws.map((d) => Number(d.drawSize.replace(/,/g, '')))
     return {
-      count: chartData.length,
+      count: uniqueDraws.length,
       minCrs: Math.min(...crsValues),
       maxCrs: Math.max(...crsValues),
       avgCrs: Math.round((crsValues.reduce((sum, v) => sum + v, 0) / crsValues.length) * 10) / 10,
       totalInvitations: invitationsValues.reduce((sum, v) => sum + v, 0),
     }
-  }, [chartData])
+  }, [visibleDraws])
+
+  const titleClasses =
+    selectedClasses.length <= 3
+      ? selectedClasses.map((c) => CLASS_NAMES[c]).join(', ')
+      : `${selectedClasses.length} classes`
+  const metricLabel = METRIC_OPTIONS.find((m) => m.value === effectiveMetric)?.label
+  const showLegend = isMultiClass || rollingAverageActive || effectiveMetric === 'both'
 
   return (
     <Section
-      title={`${CLASS_NAMES[selectedClass]} — ${METRIC_OPTIONS.find((m) => m.value === metric)?.label} trend`}
+      title={`${titleClasses} — ${metricLabel} trend`}
       loading={loading}
       error={error}
       isEmpty={chartData.length === 0}
-      emptyMessage="No draws found for this class."
+      emptyMessage="No draws found for this selection."
       action={
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700">
-            {METRIC_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setMetric(opt.value)}
-                className={`px-3 py-1 text-sm transition-colors ${
-                  metric === opt.value
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                }`}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700">
+              {METRIC_OPTIONS.map((opt) => {
+                const disabled = isMultiClass && opt.value !== 'crs'
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={disabled}
+                    title={disabled ? 'Only available for a single class' : undefined}
+                    onClick={() => setMetric(opt.value)}
+                    className={`px-3 py-1 text-sm transition-colors ${
+                      effectiveMetric === opt.value
+                        ? 'bg-blue-600 text-white'
+                        : disabled
+                          ? 'cursor-not-allowed bg-white text-slate-300 dark:bg-slate-800 dark:text-slate-600'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {showCrs && (
+              <label className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={showRollingAverage}
+                  onChange={(e) => setShowRollingAverage(e.target.checked)}
+                  className="accent-amber-500"
+                />
+                Rolling average
+              </label>
+            )}
+
+            {rollingAverageActive && (
+              <select
+                value={rollingWindow}
+                onChange={(e) => setRollingWindow(Number(e.target.value))}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
-                {opt.label}
-              </button>
-            ))}
+                {WINDOW_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}-draw window
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
-          {showCrs && (
-            <label className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
-              <input
-                type="checkbox"
-                checked={showRollingAverage}
-                onChange={(e) => setShowRollingAverage(e.target.checked)}
-                className="accent-amber-500"
-              />
-              Rolling average
-            </label>
-          )}
-
-          {rollingAverageActive && (
-            <select
-              value={rollingWindow}
-              onChange={(e) => setRollingWindow(Number(e.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CLASS_CODES.map((cls) => {
+              const active = selectedClasses.includes(cls)
+              return (
+                <button
+                  key={cls}
+                  type="button"
+                  title={CLASS_NAMES[cls]}
+                  onClick={() => toggleClass(cls)}
+                  style={
+                    active
+                      ? { backgroundColor: CLASS_COLORS[cls], borderColor: CLASS_COLORS[cls], color: 'white' }
+                      : undefined
+                  }
+                  className={
+                    active
+                      ? 'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors'
+                      : 'rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                  }
+                >
+                  {cls}
+                </button>
+              )
+            })}
+            <button
+              type="button"
+              onClick={() => setSelectedClasses([...CLASS_CODES])}
+              className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
-              {WINDOW_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n}-draw window
-                </option>
-              ))}
-            </select>
-          )}
-
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value as ClassCode)}
-            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-          >
-            {CLASS_CODES.map((code) => (
-              <option key={code} value={code}>
-                {CLASS_NAMES[code]}
-              </option>
-            ))}
-          </select>
+              All
+            </button>
+            {isMultiClass && (
+              <button
+                type="button"
+                onClick={() => setSelectedClasses(['CEC'])}
+                className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
       }
     >
-      <ResponsiveContainer width="100%" height={400}>
+      <ResponsiveContainer width="100%" height={420}>
         <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
           <XAxis
@@ -204,11 +326,13 @@ export function DrawAnalysisPage() {
             <YAxis
               yAxisId="crs"
               orientation="left"
-              tick={{ fontSize: 12, fill: metric === 'both' ? CRS_COLOR : undefined }}
-              className={metric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
+              tick={{ fontSize: 12 }}
+              className="fill-slate-500 dark:fill-slate-400"
               domain={['dataMin - 10', 'dataMax + 10']}
               width={48}
-              label={metric === 'both' ? { value: 'CRS', angle: -90, position: 'insideLeft', fill: CRS_COLOR, fontSize: 12 } : undefined}
+              label={
+                showLegend ? { value: 'CRS', angle: -90, position: 'insideLeft', fontSize: 12 } : undefined
+              }
             />
           )}
 
@@ -216,12 +340,12 @@ export function DrawAnalysisPage() {
             <YAxis
               yAxisId="invitations"
               orientation="right"
-              tick={{ fontSize: 12, fill: metric === 'both' ? INVITATIONS_COLOR : undefined }}
-              className={metric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
+              tick={{ fontSize: 12, fill: effectiveMetric === 'both' ? INVITATIONS_COLOR : undefined }}
+              className={effectiveMetric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
               domain={[0, 'dataMax + 500']}
               width={56}
               label={
-                metric === 'both'
+                effectiveMetric === 'both'
                   ? { value: 'Invitations', angle: 90, position: 'insideRight', fill: INVITATIONS_COLOR, fontSize: 12 }
                   : undefined
               }
@@ -229,43 +353,61 @@ export function DrawAnalysisPage() {
           )}
 
           <Tooltip content={ChartTooltip} />
-          {(metric === 'both' || rollingAverageActive) && <Legend wrapperStyle={{ fontSize: 12 }} />}
+          {showLegend && <Legend wrapperStyle={{ fontSize: 12 }} />}
 
-          {showCrs && (
-            <Line
-              yAxisId="crs"
-              type="monotone"
-              dataKey="crs"
-              stroke={CRS_COLOR}
-              strokeWidth={2}
-              dot={false}
-              name="CRS score"
-            />
-          )}
+          {showCrs &&
+            selectedClasses.map((cls) => (
+              <Line
+                key={`${cls}-crs`}
+                yAxisId="crs"
+                type="monotone"
+                dataKey={`${cls}_crs`}
+                stroke={CLASS_COLORS[cls]}
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+                name={isMultiClass ? `${cls} CRS` : 'CRS score'}
+              />
+            ))}
           {showInvitations && (
             <Line
               yAxisId="invitations"
               type="monotone"
-              dataKey="invitations"
+              dataKey={`${selectedClasses[0]}_invitations`}
               stroke={INVITATIONS_COLOR}
               strokeWidth={2}
               dot={false}
+              connectNulls
               name="Invitations"
             />
           )}
-          {rollingAverageActive && (
-            <Line
-              yAxisId="crs"
-              type="monotone"
-              dataKey="rollingAverage"
-              stroke={ROLLING_AVERAGE_COLOR}
-              strokeWidth={2}
-              strokeDasharray="6 3"
-              dot={false}
-              name={`${rollingWindow}-draw rolling avg`}
-              connectNulls
-            />
-          )}
+          {rollingAverageActive &&
+            selectedClasses.map((cls) => (
+              <Line
+                key={`${cls}-rolling`}
+                yAxisId="crs"
+                type="monotone"
+                dataKey={`${cls}_rollingAverage`}
+                stroke={CLASS_COLORS[cls]}
+                strokeWidth={2}
+                strokeDasharray="6 3"
+                dot={false}
+                connectNulls
+                name={isMultiClass ? `${cls} ${rollingWindow}-draw avg` : `${rollingWindow}-draw rolling avg`}
+              />
+            ))}
+
+          <Brush
+            dataKey="date"
+            height={28}
+            travellerWidth={8}
+            startIndex={brushRange?.startIndex}
+            endIndex={brushRange?.endIndex}
+            onChange={(range) => {
+              if (range.startIndex === undefined || range.endIndex === undefined) return
+              setBrushRange({ startIndex: range.startIndex, endIndex: range.endIndex })
+            }}
+          />
         </LineChart>
       </ResponsiveContainer>
 
@@ -276,6 +418,24 @@ export function DrawAnalysisPage() {
           <StatTile label="Max CRS" value={String(stats.maxCrs)} />
           <StatTile label="Avg CRS" value={String(stats.avgCrs)} />
           <StatTile label="Total invitations" value={stats.totalInvitations.toLocaleString()} />
+        </div>
+      )}
+
+      {visibleDraws.length > 0 && (
+        <div className="mt-4">
+          <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            Draws in range ({visibleDraws.length}){' '}
+            {!brushRange && (
+              <span className="font-normal text-slate-500 dark:text-slate-400">
+                — drag on the chart above to narrow the range
+              </span>
+            )}
+          </h3>
+          <div className="grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+            {[...visibleDraws].reverse().map((draw) => (
+              <DrawCard key={`${draw.drawNumber}-${draw.matchedClassCode}`} draw={draw} />
+            ))}
+          </div>
         </div>
       )}
     </Section>
