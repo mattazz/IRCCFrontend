@@ -44,16 +44,19 @@ Exit criteria: a working, simple chart - this is the "default" experience the pl
 
 One Recharts v3 gotcha hit along the way: the `Tooltip`'s `content` prop wanted a `TooltipContentProps<TValue, TName>` shape that fights TypeScript's generic inference when over-specified - resolved by typing `ChartTooltip` against the untyped (default) `TooltipContentProps` rather than pinning `<number, string>`, and passing the component directly as `content={ChartTooltip}` instead of wrapping it in a JSX element.
 
-### Phase 2 — Trend tools
-- [ ] Toggleable rolling-average overlay line
-- [ ] Window-size control for the rolling average (client-side computation, per Decision 3)
+### Phase 2 — Trend tools ✅
+- [x] Toggleable rolling-average overlay line - amber dashed line, `src/utils/rollingAverage.ts` (`computeRollingAverage`), a faithful TypeScript port of the backend's `analyzeCRSRollingAverage` (see the file's docstring for exactly what it mirrors). Only shown when metric includes CRS, since it's inherently a CRS concept
+- [x] Window-size control for the rolling average - a 3/4/6/8/12-draw dropdown, recomputes instantly client-side (per Decision 3). Verified live: 12-draw window visibly smooths the historic 2021 CRS dip more than the 4-draw default, as expected
 - [x] Toggle primary metric: CRS score vs. invitations issued (draw size) - done early, in Phase 1, as a "CRS / Invitations / Both" toggle (the "Both" option goes further than originally scoped, adding a dual-axis overlay rather than just switching which single metric is plotted)
-- [ ] Summary stats panel for the current view: min/max/average CRS, total invitations, draw count
+- [x] Summary stats panel for the current view: min/max/average CRS, total invitations, draw count - a 5-tile row below the chart, recomputed from the same filtered data driving the chart
+
+Verified live: rolling average toggle, window changes, and combined with "Both" metric mode (rolling average + CRS + invitations, three lines, dual axis, legend) all render correctly with zero console errors.
 
 ### Phase 3 — Comparison & filtering
 - [ ] Multi-class overlay: select 2+ classes, render as separate colored series with a legend
-- [ ] Date range selection (brush-to-zoom on the chart, or explicit from/to date pickers)
+- [ ] Date range selection via drag-to-select directly on the chart (Recharts' `<Brush>` component) rather than separate from/to date pickers
 - [ ] "All classes" combined view as an option, not just single/multi specific-class views
+- [ ] Draw detail cards below the chart, one per draw within the current date-range selection (defaulting to the full visible range if nothing's selected) - shows the fields the line chart can't: drawNumber, subclass, and anything else in the `Draw` type not already surfaced in the tooltip
 
 ### Phase 4 — Polish & export
 - [ ] CSV export of the currently-filtered/visible data
