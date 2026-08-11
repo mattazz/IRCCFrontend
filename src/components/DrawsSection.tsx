@@ -24,7 +24,7 @@ export function DrawsSection() {
       isEmpty={(data?.length ?? 0) === 0}
       emptyMessage="No draws found for this class."
       action={
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value as ClassCode | typeof ALL)}
