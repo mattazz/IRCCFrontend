@@ -60,11 +60,13 @@ Verified live: rolling average toggle, window changes, and combined with "Both" 
 
 Also fixed along the way: the stats panel now recomputes from the brush-selected range (falling back to the full selection when nothing's brushed) instead of always reflecting the full class filter - this is what makes "drag to select a range, see the stats update" actually work. Stats de-duplicate by `drawNumber` in case a draw's class text matches more than one selected class filter (rare, but would otherwise double-count it).
 
-### Phase 4 — Polish & export
-- [ ] CSV export of the currently-filtered/visible data
-- [ ] Chart image export (PNG) - custom-built, since Recharts has no built-in export toolbox (see Decision 1)
-- [ ] Loading/error/empty states consistent with the existing `Section` component pattern
-- [ ] Responsive layout (chart usable on mobile, not just desktop)
+### Phase 4 — Polish & export ✅
+- [x] CSV export of the currently-filtered/visible data - `src/utils/csv.ts` (`drawsToCsv`), exports the same brush/class-filtered, drawNumber-deduplicated set that feeds the stats panel and cards. Filename encodes the selected classes and, if a brush range is active, the date range
+- [x] Chart image export (PNG) - custom-built (`src/utils/chartImage.ts`, `exportSvgAsPng`), no toolbox dependency added (see Decision 1). Clones the chart's live `<svg>`, inlines each element's *computed* style (fill/stroke/color/font) before serializing since a detached SVG has no access to the page's Tailwind stylesheet - without that step, anything styled via a `className` (grid lines, axis ticks) would render blank. Rasterizes at 2x for a crisp export. Renders the chart itself (lines/axes/grid/brush); the Recharts `Legend` is HTML rendered outside the `<svg>` and isn't captured - an accepted limitation of a hand-rolled export rather than a full DOM-to-canvas library
+- [x] Loading/error/empty states consistent with the existing `Section` component pattern - already true going into this phase (the page's filter/chip controls stay visible in the `action` slot regardless of loading/error/empty, same convention as `DrawsSection`); verified with a blocked-request error screenshot showing the same red `Section` error styling used everywhere else
+- [x] Responsive layout (chart usable on mobile, not just desktop) - chart height now scales via a wrapper div (`h-72 sm:h-96 md:h-[420px]`) instead of a fixed 420px `ResponsiveContainer`; narrow-screen (`<640px`) axis widths shrink and axis-title labels are dropped so a dual-axis "Both" chart doesn't crowd out the plot area; class chips/export buttons got a `min-h-8` touch target bump; `Brush` traveller handles enlarged (8px → 12px) for easier touch dragging; stats panel's 5th tile (`Total invitations`) now spans full width on the 2-column mobile grid instead of sitting orphaned. Verified live at a 375px viewport across single-class, multi-class, and "Both" + rolling-average modes, zero console errors
+
+Verified live (desktop + 375px mobile viewport, light scheme): CSV export downloads a correctly-shaped file, PNG export produces a legible chart image with real (non-blank) styling, error state renders through `Section` like every other component, and the draw-analysis page holds up at phone width including the dual-axis "Both" view. Brush touch-drag itself still needs a real-device check per the note in Phase 3 - enlarging the traveller handles is as far as this pass could verify without one.
 
 ### Phase 5 — Testing
 - [ ] Unit tests for any client-side logic that reimplements backend behavior (rolling average, date filtering) - mirror the rigor of `IRCCBackend/test/unit/irccDrawAnalyzer.test.js` given this project's history of exactly this kind of off-by-one/alignment bug
@@ -75,14 +77,14 @@ Also fixed along the way: the stats panel now recomputes from the brush-selected
 - Server-side rendering / SEO for this page - it's an interactive tool, not content that needs to be crawlable.
 - Persisting a user's filter/window selections (e.g. to a URL query string or local storage) - nice-to-have, not blocking for a first version.
 
-## Mobile support
+## Mobile support ✅ (pending one manual check)
 
-The page needs to work on mobile, not just desktop - this applies across every phase above, not just the Phase 4 "responsive layout" line item. Things to check specifically once the current build (through Phase 3) gets a mobile pass:
+The page needs to work on mobile, not just desktop - this applies across every phase above, not just the Phase 4 "responsive layout" line item. Folded into Phase 4 as planned:
 
-- **Class chips**: 11 chips + "All"/"Reset" already wrap via `flex-wrap` on desktop: confirm they stay tappable (not too small a hit target) and legible at phone widths.
-- **Brush drag**: Recharts' `<Brush>` is mouse-drag-oriented by default; confirm it responds to touch drag on a real device/touch emulation, not just desktop mouse. This is a second, separate reason to manually verify the brush (see Phase 3) beyond the automated-testing gap noted there.
-- **Dual-axis charts** ("Both" metric, single-class only): two Y-axes plus a legend take up real width - check they don't crowd out the plot area on narrow screens.
-- **Draw cards grid**: already responsive (`grid-cols-1` up through `lg:grid-cols-3`) - confirm the `max-h-[480px]` scroll area is usable with touch scrolling and doesn't fight the page's own scroll.
-- **Stats panel**: `grid-cols-2` on mobile widths already - confirm the 5th tile (Total invitations) doesn't look orphaned on its own row.
+- **Class chips**: 11 chips + "All"/"Reset" wrap via `flex-wrap`; bumped to `min-h-8` for a consistent touch target. Verified legible and tappable at 375px.
+- **Brush drag**: traveller handles enlarged (`travellerWidth` 8px → 12px, `height` 28px → 32px) for an easier touch grab. Recharts v3's drag state still can't be driven by synthetic automation (same gap noted in Phase 3) - **still needs a real-device/touch-emulation check**, this pass only made the target bigger.
+- **Dual-axis charts** ("Both" metric, single-class only): below 640px, axis widths shrink (48/56px → 32/40px) and the "CRS"/"Invitations" axis-title labels are dropped, since they're redundant with the legend and were the main source of crowding. Verified live at 375px: plot area stays usable.
+- **Draw cards grid**: unchanged (`grid-cols-1` → `lg:grid-cols-3`, already responsive) - touch-scrolling the `max-h-[480px]` area against the page's own scroll wasn't specifically re-tested this pass.
+- **Stats panel**: the 5th tile (Total invitations) now spans both columns of the mobile 2-column grid instead of sitting alone - confirmed via screenshot at 375px.
 
-Worth a dedicated pass (likely folded into Phase 4's existing "responsive layout" item) rather than assuming desktop-verified means mobile-verified.
+One item carries forward rather than closing out: **brush touch-drag on a real device** is still unverified (automation can't drive Recharts' internal drag state, per Phase 3's note) - the traveller-size increase is this pass's best effort without one.

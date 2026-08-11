@@ -40,4 +40,4 @@ Requires a running instance of [IRCCBackend](https://github.com/mattazz/IRCCBack
 
 ## Project status
 
-Actively developed. See [`docs/DRAW_ANALYSIS_PLAN.md`](./docs/DRAW_ANALYSIS_PLAN.md) for what's done and what's outstanding on the draw-analysis page (currently: CSV/PNG export and automated testing).
+Actively developed. See [`docs/DRAW_ANALYSIS_PLAN.md`](./docs/DRAW_ANALYSIS_PLAN.md) for what's done and what's outstanding on the draw-analysis page (currently: automated testing).

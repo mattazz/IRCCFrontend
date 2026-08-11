@@ -66,7 +66,7 @@ There is no client-side cache or global store: each component/page fetches what 
 - **`TaggedDraw`** (`Draw & { matchedClassCode: ClassCode }`) exists because a draw's raw `class` text can match more than one selected class filter; tagging avoids reverse-parsing that text to figure out which color/class a card belongs to. Stats de-duplicate by `drawNumber` for the same reason.
 - **The Recharts `<Brush>`** drives both the visible date range and (indirectly) the stats panel and draw cards below the chart — dragging it doesn't refetch anything, it just narrows what the existing derived data renders.
 
-See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase history and what's still outstanding (currently: CSV/PNG export, and all automated testing).
+See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase history and what's still outstanding (currently: automated testing, Phase 5).
 
 ## Conventions
 
@@ -82,5 +82,4 @@ See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase
 ## Known gaps
 
 - No automated tests (no test runner installed, no `test` script, no test files) — see dev plan Phase 5.
-- No CSV/PNG export on the draw-analysis page yet — see dev plan Phase 4.
-- Mobile responsiveness on the draw-analysis page hasn't had a dedicated verification pass (see the dev plan's "Mobile support" section for the specific things to check).
+- Brush drag-to-select on the draw-analysis page hasn't been confirmed on a real touch device — Recharts v3's drag state doesn't respond to synthetic automation, so this is a manual-only check (see dev plan Phase 4/Mobile support).

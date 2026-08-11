@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   Brush,
   CartesianGrid,
@@ -13,9 +13,13 @@ import {
 } from 'recharts'
 import { api } from '../api/client'
 import { useApiData } from '../hooks/useApiData'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { Section } from '../components/Section'
 import { filterDrawsByClass } from '../utils/draws'
 import { computeRollingAverage } from '../utils/rollingAverage'
+import { drawsToCsv } from '../utils/csv'
+import { downloadBlob } from '../utils/download'
+import { exportSvgAsPng } from '../utils/chartImage'
 import { CLASS_CODES, CLASS_NAMES, type ClassCode, type Draw } from '../types/api'
 
 type Metric = 'crs' | 'invitations' | 'both'
@@ -71,6 +75,18 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   )
 }
 
+function ExportButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+    >
+      {children}
+    </button>
+  )
+}
+
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-center dark:border-slate-800 dark:bg-slate-800/50">
@@ -114,6 +130,10 @@ export function DrawAnalysisPage() {
   const [showRollingAverage, setShowRollingAverage] = useState(false)
   const [rollingWindow, setRollingWindow] = useState(4)
   const [brushRange, setBrushRange] = useState<{ startIndex: number; endIndex: number } | null>(null)
+  const chartWrapperRef = useRef<HTMLDivElement>(null)
+  // Below Tailwind's `sm` breakpoint - trims axis chrome (labels, widths) that would
+  // otherwise crowd out the plot area on a phone-width dual-axis chart.
+  const isNarrow = useMediaQuery('(max-width: 639px)')
 
   // Fetched once - the full history doesn't depend on which class(es)/metric are selected;
   // filtering, comparison, and metric selection all happen client-side so switching is
@@ -183,22 +203,49 @@ export function DrawAnalysisPage() {
     return allSelectedDraws.filter((draw) => draw.date >= startDate && draw.date <= endDate)
   }, [allSelectedDraws, brushRange, chartData])
 
+  // De-duplicated by drawNumber: a draw whose class field mentions more than one selected
+  // class appears once per match in visibleDraws (intentional, for the cards), but should
+  // only count once for stats and exports.
+  const uniqueVisibleDraws = useMemo(
+    () => Array.from(new Map(visibleDraws.map((d) => [d.drawNumber, d])).values()),
+    [visibleDraws],
+  )
+
   const stats = useMemo(() => {
-    if (visibleDraws.length === 0) return null
-    // De-duplicated by drawNumber: a draw whose class field mentions more than one selected
-    // class appears once per match in visibleDraws (intentional, for the cards), but should
-    // only count once here.
-    const uniqueDraws = Array.from(new Map(visibleDraws.map((d) => [d.drawNumber, d])).values())
-    const crsValues = uniqueDraws.map((d) => Number(d.crs))
-    const invitationsValues = uniqueDraws.map((d) => Number(d.drawSize.replace(/,/g, '')))
+    if (uniqueVisibleDraws.length === 0) return null
+    const crsValues = uniqueVisibleDraws.map((d) => Number(d.crs))
+    const invitationsValues = uniqueVisibleDraws.map((d) => Number(d.drawSize.replace(/,/g, '')))
     return {
-      count: uniqueDraws.length,
+      count: uniqueVisibleDraws.length,
       minCrs: Math.min(...crsValues),
       maxCrs: Math.max(...crsValues),
       avgCrs: Math.round((crsValues.reduce((sum, v) => sum + v, 0) / crsValues.length) * 10) / 10,
       totalInvitations: invitationsValues.reduce((sum, v) => sum + v, 0),
     }
-  }, [visibleDraws])
+  }, [uniqueVisibleDraws])
+
+  // Shared by both exports, so the filename always reflects what's actually on screen:
+  // selected classes, plus the brushed date range when one is active.
+  const exportLabel = useMemo(() => {
+    const classesPart = selectedClasses.length === CLASS_CODES.length ? 'all-classes' : selectedClasses.join('-')
+    const rangePart =
+      brushRange && chartData[brushRange.startIndex] && chartData[brushRange.endIndex]
+        ? `_${chartData[brushRange.startIndex].date}_to_${chartData[brushRange.endIndex].date}`
+        : ''
+    return `${classesPart}${rangePart}`
+  }, [selectedClasses, brushRange, chartData])
+
+  function handleExportCsv() {
+    const csv = drawsToCsv(uniqueVisibleDraws)
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `express-entry-draws_${exportLabel}.csv`)
+  }
+
+  async function handleExportPng() {
+    const svg = chartWrapperRef.current?.querySelector('svg')
+    if (!svg) return
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    await exportSvgAsPng(svg, `express-entry-draws-chart_${exportLabel}.png`, isDark ? '#0f172a' : '#ffffff')
+  }
 
   const titleClasses =
     selectedClasses.length <= 3
@@ -284,8 +331,8 @@ export function DrawAnalysisPage() {
                   }
                   className={
                     active
-                      ? 'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors'
-                      : 'rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                      ? 'min-h-8 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors'
+                      : 'min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                   }
                 >
                   {cls}
@@ -295,7 +342,7 @@ export function DrawAnalysisPage() {
             <button
               type="button"
               onClick={() => setSelectedClasses([...CLASS_CODES])}
-              className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               All
             </button>
@@ -303,7 +350,7 @@ export function DrawAnalysisPage() {
               <button
                 type="button"
                 onClick={() => setSelectedClasses(['CEC'])}
-                className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Reset
               </button>
@@ -312,107 +359,114 @@ export function DrawAnalysisPage() {
         </div>
       }
     >
-      <ResponsiveContainer width="100%" height={420}>
-        <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 12 }}
-            className="fill-slate-500 dark:fill-slate-400"
-            minTickGap={40}
-          />
-
-          {showCrs && (
-            <YAxis
-              yAxisId="crs"
-              orientation="left"
+      <div ref={chartWrapperRef} className="h-72 sm:h-96 md:h-[420px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
+            <XAxis
+              dataKey="date"
               tick={{ fontSize: 12 }}
               className="fill-slate-500 dark:fill-slate-400"
-              domain={['dataMin - 10', 'dataMax + 10']}
-              width={48}
-              label={
-                showLegend ? { value: 'CRS', angle: -90, position: 'insideLeft', fontSize: 12 } : undefined
-              }
+              minTickGap={40}
             />
-          )}
 
-          {showInvitations && (
-            <YAxis
-              yAxisId="invitations"
-              orientation="right"
-              tick={{ fontSize: 12, fill: effectiveMetric === 'both' ? INVITATIONS_COLOR : undefined }}
-              className={effectiveMetric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
-              domain={[0, 'dataMax + 500']}
-              width={56}
-              label={
-                effectiveMetric === 'both'
-                  ? { value: 'Invitations', angle: 90, position: 'insideRight', fill: INVITATIONS_COLOR, fontSize: 12 }
-                  : undefined
-              }
-            />
-          )}
-
-          <Tooltip content={ChartTooltip} />
-          {showLegend && <Legend wrapperStyle={{ fontSize: 12 }} />}
-
-          {showCrs &&
-            selectedClasses.map((cls) => (
-              <Line
-                key={`${cls}-crs`}
+            {showCrs && (
+              <YAxis
                 yAxisId="crs"
+                orientation="left"
+                tick={{ fontSize: 12 }}
+                className="fill-slate-500 dark:fill-slate-400"
+                domain={['dataMin - 10', 'dataMax + 10']}
+                width={isNarrow ? 32 : 48}
+                label={
+                  showLegend && !isNarrow ? { value: 'CRS', angle: -90, position: 'insideLeft', fontSize: 12 } : undefined
+                }
+              />
+            )}
+
+            {showInvitations && (
+              <YAxis
+                yAxisId="invitations"
+                orientation="right"
+                tick={{ fontSize: 12, fill: effectiveMetric === 'both' ? INVITATIONS_COLOR : undefined }}
+                className={effectiveMetric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
+                domain={[0, 'dataMax + 500']}
+                width={isNarrow ? 40 : 56}
+                label={
+                  effectiveMetric === 'both' && !isNarrow
+                    ? { value: 'Invitations', angle: 90, position: 'insideRight', fill: INVITATIONS_COLOR, fontSize: 12 }
+                    : undefined
+                }
+              />
+            )}
+
+            <Tooltip content={ChartTooltip} />
+            {showLegend && <Legend wrapperStyle={{ fontSize: 12 }} />}
+
+            {showCrs &&
+              selectedClasses.map((cls) => (
+                <Line
+                  key={`${cls}-crs`}
+                  yAxisId="crs"
+                  type="monotone"
+                  dataKey={`${cls}_crs`}
+                  stroke={CLASS_COLORS[cls]}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                  name={isMultiClass ? `${cls} CRS` : 'CRS score'}
+                />
+              ))}
+            {showInvitations && (
+              <Line
+                yAxisId="invitations"
                 type="monotone"
-                dataKey={`${cls}_crs`}
-                stroke={CLASS_COLORS[cls]}
+                dataKey={`${selectedClasses[0]}_invitations`}
+                stroke={INVITATIONS_COLOR}
                 strokeWidth={2}
                 dot={false}
                 connectNulls
-                name={isMultiClass ? `${cls} CRS` : 'CRS score'}
+                name="Invitations"
               />
-            ))}
-          {showInvitations && (
-            <Line
-              yAxisId="invitations"
-              type="monotone"
-              dataKey={`${selectedClasses[0]}_invitations`}
-              stroke={INVITATIONS_COLOR}
-              strokeWidth={2}
-              dot={false}
-              connectNulls
-              name="Invitations"
-            />
-          )}
-          {rollingAverageActive &&
-            selectedClasses.map((cls) => (
-              <Line
-                key={`${cls}-rolling`}
-                yAxisId="crs"
-                type="monotone"
-                dataKey={`${cls}_rollingAverage`}
-                stroke={CLASS_COLORS[cls]}
-                strokeWidth={2}
-                strokeDasharray="6 3"
-                dot={false}
-                connectNulls
-                name={isMultiClass ? `${cls} ${rollingWindow}-draw avg` : `${rollingWindow}-draw rolling avg`}
-              />
-            ))}
+            )}
+            {rollingAverageActive &&
+              selectedClasses.map((cls) => (
+                <Line
+                  key={`${cls}-rolling`}
+                  yAxisId="crs"
+                  type="monotone"
+                  dataKey={`${cls}_rollingAverage`}
+                  stroke={CLASS_COLORS[cls]}
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  connectNulls
+                  name={isMultiClass ? `${cls} ${rollingWindow}-draw avg` : `${rollingWindow}-draw rolling avg`}
+                />
+              ))}
 
-          <Brush
-            dataKey="date"
-            height={28}
-            travellerWidth={8}
-            startIndex={brushRange?.startIndex}
-            endIndex={brushRange?.endIndex}
-            onChange={(range) => {
-              if (range.startIndex === undefined || range.endIndex === undefined) return
-              setBrushRange({ startIndex: range.startIndex, endIndex: range.endIndex })
-            }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            <Brush
+              dataKey="date"
+              height={32}
+              travellerWidth={12}
+              startIndex={brushRange?.startIndex}
+              endIndex={brushRange?.endIndex}
+              onChange={(range) => {
+                if (range.startIndex === undefined || range.endIndex === undefined) return
+                setBrushRange({ startIndex: range.startIndex, endIndex: range.endIndex })
+              }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <ExportButton onClick={handleExportCsv}>Export CSV</ExportButton>
+        <ExportButton onClick={handleExportPng}>Export PNG</ExportButton>
+      </div>
 
       {stats && (
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
           <StatTile label="Draws" value={String(stats.count)} />
           <StatTile label="Min CRS" value={String(stats.minCrs)} />
           <StatTile label="Max CRS" value={String(stats.maxCrs)} />
