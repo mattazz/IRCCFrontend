@@ -5,8 +5,8 @@ import { SpeechesSection } from '../components/SpeechesSection'
 export function HomePage() {
   return (
     <>
-      <NewsSection />
       <DrawsSection />
+      <NewsSection />
       <SpeechesSection />
     </>
   )
