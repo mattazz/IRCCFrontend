@@ -33,18 +33,21 @@ Default view: a simple, clean CRS-over-time chart for a single class. Layered on
 
 Verified live: routing works, nav highlights the active page, backend route returns all 435 draws oldest-first, no console errors on a fresh load. One dev-only hiccup along the way: installing new packages while the Vite dev server was already running left a stale dependency pre-bundle cache (`node_modules/.vite`) that caused a transient "Invalid hook call" error - fixed by clearing that cache and restarting. Not a code bug; worth remembering if it recurs after future `npm install`s mid-session.
 
-### Phase 1 — Simple default chart
-- [ ] Fetch draw history for CEC (default class)
-- [ ] Single-line CRS-over-time chart, chronological order
-- [ ] Class filter dropdown (reuse `CLASS_CODES`/`CLASS_NAMES` from `src/types/api.ts`, same pattern as the home page's dropdown)
-- [ ] Tooltip on hover: date, CRS, class, invitations issued
+### Phase 1 — Simple default chart ✅
+- [x] Fetch draw history via `api.draws.all()`, fetched once and filtered client-side (so switching class/metric is instant, no refetch)
+- [x] Single-line CRS-over-time chart, chronological order, default CEC
+- [x] Class filter dropdown (reuse `CLASS_CODES`/`CLASS_NAMES`)
+- [x] Tooltip on hover: date, CRS, class, invitations issued (`src/pages/DrawAnalysisPage.tsx`)
+- [x] **Pulled forward from Phase 2**: a CRS score / Invitations / Both metric toggle, requested mid-build. "Both" renders a dual-axis chart (CRS on the left, invitations on the right, color-matched ticks + legend) since the two metrics are on wildly different scales (~65-900 vs ~4-8,000+) - a single shared axis would make one series look flat.
 
-Exit criteria: a working, simple chart - this is the "default" experience the plan's goal describes.
+Exit criteria: a working, simple chart - this is the "default" experience the plan's goal describes. ✅ Verified live in-browser across all three metric modes, class switching, and tooltips, with zero console errors.
+
+One Recharts v3 gotcha hit along the way: the `Tooltip`'s `content` prop wanted a `TooltipContentProps<TValue, TName>` shape that fights TypeScript's generic inference when over-specified - resolved by typing `ChartTooltip` against the untyped (default) `TooltipContentProps` rather than pinning `<number, string>`, and passing the component directly as `content={ChartTooltip}` instead of wrapping it in a JSX element.
 
 ### Phase 2 — Trend tools
 - [ ] Toggleable rolling-average overlay line
 - [ ] Window-size control for the rolling average (client-side computation, per Decision 3)
-- [ ] Toggle primary metric: CRS score vs. invitations issued (draw size) - both are things analysts track
+- [x] Toggle primary metric: CRS score vs. invitations issued (draw size) - done early, in Phase 1, as a "CRS / Invitations / Both" toggle (the "Both" option goes further than originally scoped, adding a dual-axis overlay rather than just switching which single metric is plotted)
 - [ ] Summary stats panel for the current view: min/max/average CRS, total invitations, draw count
 
 ### Phase 3 — Comparison & filtering

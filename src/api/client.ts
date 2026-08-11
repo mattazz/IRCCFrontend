@@ -45,6 +45,7 @@ export const api = {
   },
   draws: {
     latest: (count = 5) => request<Draw[]>('/api/v1/draws/latest', { count }),
+    all: () => request<Draw[]>('/api/v1/draws/all'),
     filter: (classCode: ClassCode) => request<DrawFilterResult>(`/api/v1/draws/filter/${classCode}`),
     rollingAverage: (classCode: ClassCode) =>
       request<RollingAverageResult>(`/api/v1/draws/rolling-average/${classCode}`),
