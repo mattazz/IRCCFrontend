@@ -6,7 +6,7 @@ See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for how the codebase is put
 
 ## Stack
 
-React 19 + TypeScript, Vite, Tailwind CSS v4, react-router-dom, Recharts. Linted with oxlint.
+React 19 + TypeScript, Vite, Tailwind CSS v4, react-router-dom, Recharts. Linted with oxlint, tested with Vitest + React Testing Library.
 
 ## Getting started
 
@@ -26,6 +26,8 @@ Requires a running instance of [IRCCBackend](https://github.com/mattazz/IRCCBack
 | `npm run build` | Type-check (`tsc -b`) and build for production |
 | `npm run preview` | Preview the production build locally |
 | `npm run lint` | Run oxlint |
+| `npm test` | Run the test suite once |
+| `npm run test:watch` | Run the test suite in watch mode |
 
 ## Environment variables
 
@@ -40,4 +42,4 @@ Requires a running instance of [IRCCBackend](https://github.com/mattazz/IRCCBack
 
 ## Project status
 
-Actively developed. See [`docs/DRAW_ANALYSIS_PLAN.md`](./docs/DRAW_ANALYSIS_PLAN.md) for what's done and what's outstanding on the draw-analysis page (currently: automated testing).
+Actively developed. All five phases of the draw-analysis page's [dev plan](./docs/DRAW_ANALYSIS_PLAN.md) are complete; one manual check (brush touch-drag on a real device) is still outstanding.

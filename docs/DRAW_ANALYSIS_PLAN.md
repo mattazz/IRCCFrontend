@@ -68,9 +68,16 @@ Also fixed along the way: the stats panel now recomputes from the brush-selected
 
 Verified live (desktop + 375px mobile viewport, light scheme): CSV export downloads a correctly-shaped file, PNG export produces a legible chart image with real (non-blank) styling, error state renders through `Section` like every other component, and the draw-analysis page holds up at phone width including the dual-axis "Both" view. Brush touch-drag itself still needs a real-device check per the note in Phase 3 - enlarging the traveller handles is as far as this pass could verify without one.
 
-### Phase 5 — Testing
-- [ ] Unit tests for any client-side logic that reimplements backend behavior (rolling average, date filtering) - mirror the rigor of `IRCCBackend/test/unit/irccDrawAnalyzer.test.js` given this project's history of exactly this kind of off-by-one/alignment bug
-- [ ] Basic render tests for the page (loads, shows chart once data arrives, shows error state on a failed fetch)
+### Phase 5 — Testing ✅
+- [x] Test framework: **Vitest** + React Testing Library + jsdom, wired into the existing `vite.config.ts` (`vitest/config`'s `defineConfig` instead of `vite`'s, so Vite's plugins and a `test` block share one file) rather than a second tool with its own config - `npm test` (`vitest run`) / `npm run test:watch`. `src/test/setup.ts` registers jest-dom matchers and RTL's `afterEach(cleanup)` (needed since `globals: true` isn't set - tests import `describe`/`it`/`expect` from `vitest` explicitly), plus mocks for `ResizeObserver` and `matchMedia`, neither of which jsdom implements and both of which the page depends on (`ResponsiveContainer`'s sizing, `useMediaQuery`)
+- [x] Unit tests for any client-side logic that reimplements backend behavior (rolling average, date filtering) - mirrors the rigor of `IRCCBackend/test/unit/irccDrawAnalyzer.test.js` (same window/insufficient-data/non-numeric-filtering cases, same fixture values) plus a couple of frontend-specific cases (adjustable window sizes, since only the frontend supports those - Decision 3):
+  - `src/utils/rollingAverage.test.ts`
+  - `src/utils/dateOrder.test.ts` - covers `sortByDate`/`filterByDateRange`, extracted from three near-duplicate inline comparators in `DrawAnalysisPage.tsx` (chart-row sort, card-list sort, brush range filter) into `src/utils/dateOrder.ts` specifically so this logic could be unit tested directly instead of only indirectly through page-level tests
+  - `src/utils/draws.test.ts` - `filterDrawsByClass`
+  - `src/utils/csv.test.ts` - `drawsToCsv`, including comma/quote escaping
+- [x] Basic render tests for the page (loads, shows chart once data arrives, shows error state on a failed fetch) - `src/pages/DrawAnalysisPage.test.tsx`, mocking `api.draws.all`. The "shows chart" case needed a real fix, not just a test: asserting on the loading text disappearing wasn't sufficient, since the chart mounting is a *second*, cascading render (loading flips false → `ResponsiveContainer` mounts at an invalid size → its `ResizeObserver` effect fires → re-renders at the mocked size) - `waitFor` has to poll for the actual `<svg>` appearing, not a proxy condition, or it can resolve one render too early
+
+Not covered: `src/utils/chartImage.ts` (the PNG export). Rasterizing an SVG to canvas needs a real `Image`/canvas decode pipeline that jsdom doesn't provide - the meaningful verification for it was the live browser check in Phase 4 (real, non-blank exported PNGs), not a unit test that would mostly be exercising mocks of the DOM/Canvas APIs rather than the actual style-inlining logic.
 
 ## Non-goals (for now)
 

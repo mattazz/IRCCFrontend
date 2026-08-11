@@ -15,7 +15,7 @@ This repo has no server of its own — it's a static SPA (Vite build) that talks
 - **Tailwind CSS v4** (via `@tailwindcss/vite`) for styling, dark mode via `dark:` variants (follows OS preference, no manual toggle)
 - **Recharts v3** for the draw-analysis chart (see Decision 1 in the dev plan for why)
 - **oxlint** for linting (not ESLint)
-- No test framework wired up yet (no test runner in `package.json`) — a known gap, see the dev plan's Phase 5
+- **Vitest** + **React Testing Library** + **jsdom** for tests, sharing `vite.config.ts` (via `vitest/config`'s `defineConfig`) rather than a separate config file
 
 ## Directory layout
 
@@ -36,10 +36,17 @@ src/
   utils/
     draws.ts                filterDrawsByClass - client-side class filtering
     rollingAverage.ts        computeRollingAverage - TS port of the backend's rolling-average algorithm
+    dateOrder.ts             sortByDate / filterByDateRange - shared chronological sort + inclusive date-range filter
+    csv.ts                   drawsToCsv - CSV export for the draw-analysis page
+    download.ts              downloadBlob - generic browser-download trigger
+    chartImage.ts            exportSvgAsPng - PNG export of the draw-analysis chart
+  test/setup.ts            Vitest setup: jest-dom matchers, RTL cleanup, ResizeObserver/matchMedia mocks (jsdom has neither)
   App.tsx                  Router wiring (routes -> Layout -> pages)
   main.tsx                 Entry point (StrictMode + createRoot)
   index.css                Tailwind entry
 ```
+
+Test files live next to what they test (`foo.ts` + `foo.test.ts`), not in a parallel `__tests__` tree.
 
 Flat and shallow on purpose: no state management library, no design-system package, no barrel files. Each page owns its own data-fetching and derived state via hooks; components are shared only where the same shape (a titled card with loading/error/empty handling) actually repeats.
 
@@ -66,7 +73,15 @@ There is no client-side cache or global store: each component/page fetches what 
 - **`TaggedDraw`** (`Draw & { matchedClassCode: ClassCode }`) exists because a draw's raw `class` text can match more than one selected class filter; tagging avoids reverse-parsing that text to figure out which color/class a card belongs to. Stats de-duplicate by `drawNumber` for the same reason.
 - **The Recharts `<Brush>`** drives both the visible date range and (indirectly) the stats panel and draw cards below the chart — dragging it doesn't refetch anything, it just narrows what the existing derived data renders.
 
-See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase history and what's still outstanding (currently: automated testing, Phase 5).
+See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase history.
+
+## Testing
+
+`npm test` runs Vitest once (`vitest run`); `npm run test:watch` for the interactive watcher. `src/test/setup.ts` mocks `ResizeObserver` and `matchMedia`, since jsdom implements neither and the draw-analysis page depends on both (Recharts' `<ResponsiveContainer>` sizing, and `useMediaQuery`) - any test that renders a chart or a component using `useMediaQuery` needs these already loaded, which `setupFiles` in `vite.config.ts`'s `test` block guarantees.
+
+One easy-to-hit trap when testing `DrawAnalysisPage`: the chart's `<svg>` doesn't appear in the same render as the fetch resolving. `Section` doesn't mount its children (including `ResponsiveContainer`) until `loading` is false, so the container mounts at an invalid size, and only reflects a real size after its own `ResizeObserver` effect fires and triggers a second render. A `waitFor` keyed on the loading text disappearing can resolve one render too early; wait for the actual thing you need (e.g. the `<svg>` itself) instead of a proxy condition. See the comment in `src/pages/DrawAnalysisPage.test.tsx` for the specifics.
+
+Not unit tested: `src/utils/chartImage.ts` (SVG-to-PNG rasterization) - needs a real `Image`/canvas decode pipeline that jsdom doesn't provide. It was verified via a live browser check instead (see the dev plan's Phase 4 notes).
 
 ## Conventions
 
@@ -81,5 +96,4 @@ See [DRAW_ANALYSIS_PLAN.md](./DRAW_ANALYSIS_PLAN.md) for the full phase-by-phase
 
 ## Known gaps
 
-- No automated tests (no test runner installed, no `test` script, no test files) — see dev plan Phase 5.
 - Brush drag-to-select on the draw-analysis page hasn't been confirmed on a real touch device — Recharts v3's drag state doesn't respond to synthetic automation, so this is a manual-only check (see dev plan Phase 4/Mobile support).

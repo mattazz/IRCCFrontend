@@ -17,6 +17,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery'
 import { Section } from '../components/Section'
 import { filterDrawsByClass } from '../utils/draws'
 import { computeRollingAverage } from '../utils/rollingAverage'
+import { sortByDate, filterByDateRange } from '../utils/dateOrder'
 import { drawsToCsv } from '../utils/csv'
 import { downloadBlob } from '../utils/download'
 import { exportSvgAsPng } from '../utils/chartImage'
@@ -181,7 +182,7 @@ export function DrawAnalysisPage() {
         byDate.set(draw.date, entry)
       }
     }
-    return Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    return sortByDate(Array.from(byDate.values()))
   }, [data, selectedClasses, rollingAverageActive, rollingWindow])
 
   // Flat list of actual draws (not merged-by-date rows) across all selected classes, for the
@@ -190,9 +191,9 @@ export function DrawAnalysisPage() {
   // color without reverse-parsing the raw class text.
   const allSelectedDraws = useMemo<TaggedDraw[]>(() => {
     if (!data) return []
-    return selectedClasses
-      .flatMap((cls) => filterDrawsByClass(data, cls).map((draw) => ({ ...draw, matchedClassCode: cls })))
-      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    return sortByDate(
+      selectedClasses.flatMap((cls) => filterDrawsByClass(data, cls).map((draw) => ({ ...draw, matchedClassCode: cls }))),
+    )
   }, [data, selectedClasses])
 
   const visibleDraws = useMemo(() => {
@@ -200,7 +201,7 @@ export function DrawAnalysisPage() {
     const startDate = chartData[brushRange.startIndex]?.date
     const endDate = chartData[brushRange.endIndex]?.date
     if (!startDate || !endDate) return allSelectedDraws
-    return allSelectedDraws.filter((draw) => draw.date >= startDate && draw.date <= endDate)
+    return filterByDateRange(allSelectedDraws, startDate, endDate)
   }, [allSelectedDraws, brushRange, chartData])
 
   // De-duplicated by drawNumber: a draw whose class field mentions more than one selected
