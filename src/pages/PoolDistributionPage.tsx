@@ -133,22 +133,27 @@ export function PoolDistributionPage() {
     return parseNum(distData['601-1200']) + parseNum(distData['501-600'])
   }, [distData])
 
+  // '451-500' and '401-450' aren't real bracket keys - the underlying data splits into
+  // non-overlapping 10-point brackets (see the dd3/dd9 fix in the backend's
+  // irccDrawScraper.js), so these sum the sub-brackets that fall in each range instead.
   const highMidPoolCount = useMemo(() => {
-    if (!distData) return 0
-    return parseNum(distData['451-500'])
-  }, [distData])
+    return chartData
+      .filter((d) => ['491–500', '481–490', '471–480', '461–470', '451–460'].includes(d.bracket))
+      .reduce((acc, curr) => acc + curr.count, 0)
+  }, [chartData])
 
   const midLowPoolCount = useMemo(() => {
-    if (!distData) return 0
-    return parseNum(distData['401-450'])
-  }, [distData])
+    return chartData
+      .filter((d) => ['441–450', '431–440', '421–430', '411–420', '401–410'].includes(d.bracket))
+      .reduce((acc, curr) => acc + curr.count, 0)
+  }, [chartData])
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Express Entry Candidate Pool Distribution
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
