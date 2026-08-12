@@ -13,6 +13,7 @@ import { api } from '../api/client'
 import type { ClassCode, Draw, DrawMatchResult } from '../types/api'
 import { CLASS_CODES, CLASS_NAMES } from '../types/api'
 import { computeDrawMatch } from '../utils/matcher'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 const TIMEFRAME_OPTIONS = [
   { label: 'Last 6 Months', value: 6 },
@@ -31,6 +32,8 @@ export function CrsMatcherPage() {
   const [score, setScore] = useState<number>(510)
   const [selectedClass, setSelectedClass] = useState<ClassCode | ''>('CEC')
   const [timeframeMonths, setTimeframeMonths] = useState<number>(12)
+
+  const isNarrow = useMediaQuery('(max-width: 639px)')
 
   useEffect(() => {
     let cancelled = false
@@ -231,14 +234,15 @@ export function CrsMatcherPage() {
                 <label className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Your Current CRS Score: <span className="text-indigo-600 dark:text-indigo-400 font-mono text-lg">{score}</span>
                 </label>
-                <div className="flex items-center gap-3">
+                {/* On mobile: stack slider and number input vertically */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <input
                     type="range"
                     min="1"
                     max="1200"
                     value={score}
                     onChange={(e) => setScore(Number(e.target.value))}
-                    className="h-2 flex-1 accent-indigo-600 cursor-pointer rounded-lg bg-slate-200 dark:bg-slate-700"
+                    className="h-2 w-full accent-indigo-600 cursor-pointer rounded-lg bg-slate-200 dark:bg-slate-700 sm:flex-1"
                   />
                   <input
                     type="number"
@@ -246,7 +250,7 @@ export function CrsMatcherPage() {
                     max="1200"
                     value={score}
                     onChange={(e) => setScore(Math.max(1, Math.min(1200, Number(e.target.value) || 1)))}
-                    className="w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-center font-mono text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-center font-mono text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 sm:w-24"
                   />
                 </div>
                 {/* Presets */}
@@ -257,7 +261,7 @@ export function CrsMatcherPage() {
                       key={preset}
                       type="button"
                       onClick={() => setScore(preset)}
-                      className={`rounded-md px-2.5 py-1 text-xs font-mono font-medium transition-colors ${
+                      className={`min-h-[40px] rounded-md px-2.5 py-1.5 text-xs font-mono font-medium transition-colors ${
                         score === preset
                           ? 'bg-indigo-600 text-white'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
@@ -299,7 +303,7 @@ export function CrsMatcherPage() {
                         key={tf.value}
                         type="button"
                         onClick={() => setTimeframeMonths(tf.value)}
-                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                        className={`min-h-[40px] rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
                           timeframeMonths === tf.value
                             ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
@@ -315,8 +319,9 @@ export function CrsMatcherPage() {
           </div>
 
           {/* Match Verdict Banner */}
-          <div className={`rounded-2xl border p-6 ${currentTheme.bg} ${currentTheme.border}`}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className={`rounded-2xl border p-5 sm:p-6 ${currentTheme.bg} ${currentTheme.border}`}>
+            {/* Stacks vertically on mobile, side-by-side on sm+ */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-3">
                   <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${currentTheme.badge}`}>
@@ -334,7 +339,7 @@ export function CrsMatcherPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col items-end text-right">
+              <div className="flex flex-col sm:items-end sm:text-right">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                   Latest Cutoff Gap
                 </span>
@@ -495,7 +500,7 @@ export function CrsMatcherPage() {
               {/* Bar Chart */}
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={poolChartData} margin={{ top: 15, right: 10, left: 10, bottom: 25 }}>
+                  <BarChart data={poolChartData} margin={{ top: 15, right: 10, left: 10, bottom: isNarrow ? 40 : 25 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                     <XAxis
                       dataKey="label"
@@ -505,7 +510,7 @@ export function CrsMatcherPage() {
                       tick={{ fontSize: 10 }}
                       height={50}
                     />
-                    <YAxis tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: isNarrow ? 9 : 10 }} />
                     <Tooltip
                       formatter={(value) => {
                         const num = Number(value) || 0
@@ -565,7 +570,8 @@ export function CrsMatcherPage() {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* ── Desktop table (sm+) ── */}
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-left text-xs text-slate-600 dark:text-slate-300">
                 <thead className="border-b border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 uppercase tracking-wider font-semibold">
                   <tr>
@@ -617,6 +623,54 @@ export function CrsMatcherPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* ── Mobile card list (below sm) ── */}
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 sm:hidden">
+              {matchResult.draws.map((d, i) => (
+                <div key={`${d.drawNumber}-${i}`} className="py-3 space-y-2">
+                  {/* Status badge */}
+                  {d.qualified ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      ✅ Qualified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-bold text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                      ❌ Missed
+                    </span>
+                  )}
+                  {/* Draw # + Date */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                      {d.url ? (
+                        <a
+                          href={d.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        >
+                          #{d.drawNumber} <span className="text-[10px]">↗</span>
+                        </a>
+                      ) : (
+                        `#${d.drawNumber}`
+                      )}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{d.date}</span>
+                  </div>
+                  {/* Stream */}
+                  <div className="text-sm text-slate-700 dark:text-slate-200">{d.class}</div>
+                  {/* CRS gap + ITAs */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100">CRS {d.crs}</span>
+                      <span className={`font-mono font-bold ${d.gap >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {d.gap >= 0 ? `+${d.gap}` : d.gap} pts
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">{d.drawSize} ITAs</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </>

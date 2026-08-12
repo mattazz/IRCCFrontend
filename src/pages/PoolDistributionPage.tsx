@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { api } from '../api/client'
 import type { Draw, PoolDistribution } from '../types/api'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 
 interface BracketPoint {
   bracket: string
@@ -46,6 +47,8 @@ export function PoolDistributionPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
+
+  const isNarrow = useMediaQuery('(max-width: 639px)')
 
   useEffect(() => {
     let cancelled = false
@@ -154,12 +157,12 @@ export function PoolDistributionPage() {
         </div>
 
         {draws.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Snapshot Draw:</label>
             <select
               value={selectedIndex}
               onChange={(e) => setSelectedIndex(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 font-mono"
+              className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 font-mono"
             >
               {draws.map((d, i) => (
                 <option key={d.drawNumber} value={i}>
@@ -264,7 +267,7 @@ export function PoolDistributionPage() {
             </h4>
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: isNarrow ? 40 : 25 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
                   <XAxis
                     dataKey="bracket"

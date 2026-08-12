@@ -42,7 +42,7 @@ export function DrawsSection() {
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value as ClassCode | typeof ALL)}
-            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="min-h-[40px] rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             <option value={ALL}>All classes</option>
             {CLASS_CODES.map((code) => (
@@ -57,15 +57,16 @@ export function DrawsSection() {
         </div>
       }
     >
-      <div className="overflow-x-auto">
+      {/* ── Desktop table (hidden on mobile) ── */}
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+            <tr className="border-b border-slate-200 text-slate-500 dark:border-slate-800 dark:text-slate-400">
               <th className="pb-2 pr-4 font-medium">Draw #</th>
               <th className="pb-2 pr-4 font-medium">Date</th>
               <th className="pb-2 pr-4 font-medium">Stream / Category</th>
-              <th className="pb-2 pr-4 font-medium text-right">Cutoff CRS</th>
-              <th className="pb-2 font-medium text-right">Invitations</th>
+              <th className="pb-2 pr-4 text-right font-medium">Cutoff CRS</th>
+              <th className="pb-2 text-right font-medium">Invitations</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -127,6 +128,67 @@ export function DrawsSection() {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile card list (hidden on sm+) ── */}
+      <div className="divide-y divide-slate-100 dark:divide-slate-800 sm:hidden">
+        {displayedDraws.map((draw) => {
+          const change = getCrsChangeForDraw(draw, sortedAllDraws)
+          return (
+            <div key={draw.drawNumber} className="py-3">
+              {/* Row 1: Draw # + Date */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">
+                  {draw.url ? (
+                    <a
+                      href={draw.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                    >
+                      #{draw.drawNumber} <span className="text-xs">↗</span>
+                    </a>
+                  ) : (
+                    `#${draw.drawNumber}`
+                  )}
+                </span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{draw.date}</span>
+              </div>
+
+              {/* Row 2: Stream */}
+              <div className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+                {draw.class}
+              </div>
+              {draw.subclass && draw.subclass !== draw.class && (
+                <div className="text-xs text-slate-500 dark:text-slate-400">{draw.subclass}</div>
+              )}
+
+              {/* Row 3: CRS + Invitations */}
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold font-mono text-slate-900 dark:text-slate-100">
+                    CRS {draw.crs}
+                  </span>
+                  {change && change.diff !== 0 && (
+                    <span
+                      className={`text-xs font-bold font-mono flex items-center gap-0.5 ${
+                        change.diff < 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-rose-600 dark:text-rose-400'
+                      }`}
+                      title={`CRS change vs previous ${draw.class} draw (#${change.prevDrawNumber}, CRS ${change.prevCrs})`}
+                    >
+                      {change.diff < 0 ? '↓' : '↑'}{change.formatted} pts
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-mono text-slate-600 dark:text-slate-300">
+                  {draw.drawSize} ITAs
+                </span>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </Section>
   )

@@ -85,7 +85,7 @@ function ExportButton({ onClick, children }: { onClick: () => void; children: Re
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+      className="min-h-[40px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
     >
       {children}
     </button>
@@ -301,7 +301,8 @@ export function DrawAnalysisPage() {
       emptyMessage="No draws found for this selection."
       action={
         <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Metric toggle + rolling average — stacks vertically on mobile */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             <div className="inline-flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700">
               {METRIC_OPTIONS.map((opt) => {
                 const disabled = isMultiClass && opt.value !== 'crs'
@@ -312,7 +313,7 @@ export function DrawAnalysisPage() {
                     disabled={disabled}
                     title={disabled ? 'Only available for a single class' : undefined}
                     onClick={() => setMetric(opt.value)}
-                    className={`px-3 py-1 text-sm transition-colors ${
+                    className={`min-h-[40px] px-3 py-2 text-sm transition-colors ${
                       effectiveMetric === opt.value
                         ? 'bg-blue-600 text-white'
                         : disabled
@@ -326,34 +327,37 @@ export function DrawAnalysisPage() {
               })}
             </div>
 
-            {showCrs && (
-              <label className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
-                <input
-                  type="checkbox"
-                  checked={showRollingAverage}
-                  onChange={(e) => setShowRollingAverage(e.target.checked)}
-                  className="accent-amber-500"
-                />
-                Rolling average
-              </label>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {showCrs && (
+                <label className="flex min-h-[40px] items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={showRollingAverage}
+                    onChange={(e) => setShowRollingAverage(e.target.checked)}
+                    className="accent-amber-500"
+                  />
+                  Rolling average
+                </label>
+              )}
 
-            {rollingAverageActive && (
-              <select
-                value={rollingWindow}
-                onChange={(e) => setRollingWindow(Number(e.target.value))}
-                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-              >
-                {WINDOW_OPTIONS.map((n) => (
-                  <option key={n} value={n}>
-                    {n}-draw window
-                  </option>
-                ))}
-              </select>
-            )}
+              {rollingAverageActive && (
+                <select
+                  value={rollingWindow}
+                  onChange={(e) => setRollingWindow(Number(e.target.value))}
+                  className="min-h-[40px] rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  {WINDOW_OPTIONS.map((n) => (
+                    <option key={n} value={n}>
+                      {n}-draw window
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Class chip strip — scrollable on mobile to avoid wrapping chaos */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 snap-x">
             {CLASS_CODES.map((cls) => {
               const active = selectedClasses.includes(cls)
               return (
@@ -369,18 +373,22 @@ export function DrawAnalysisPage() {
                   }
                   className={
                     active
-                      ? 'min-h-8 rounded-full border px-2.5 py-1.5 text-xs font-medium transition-colors'
-                      : 'min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                      ? 'min-h-[40px] shrink-0 snap-start rounded-full border px-3 py-2 text-xs font-medium transition-colors'
+                      : 'min-h-[40px] shrink-0 snap-start rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                   }
                 >
                   {cls}
                 </button>
               )
             })}
+          </div>
+
+          {/* All / Reset — separate row so they don't sit in the scrollable strip */}
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setSelectedClasses([...CLASS_CODES])}
-              className="min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="min-h-[40px] rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               All
             </button>
@@ -388,7 +396,7 @@ export function DrawAnalysisPage() {
               <button
                 type="button"
                 onClick={() => setSelectedClasses(['CEC'])}
-                className="min-h-8 rounded-full border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                className="min-h-[40px] rounded-full border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Reset
               </button>
@@ -403,16 +411,16 @@ export function DrawAnalysisPage() {
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-800" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: isNarrow ? 10 : 12 }}
               className="fill-slate-500 dark:fill-slate-400"
-              minTickGap={40}
+              minTickGap={isNarrow ? 60 : 40}
             />
 
             {showCrs && (
               <YAxis
                 yAxisId="crs"
                 orientation="left"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: isNarrow ? 10 : 12 }}
                 className="fill-slate-500 dark:fill-slate-400"
                 domain={['dataMin - 10', 'dataMax + 10']}
                 width={isNarrow ? 32 : 48}
@@ -426,7 +434,7 @@ export function DrawAnalysisPage() {
               <YAxis
                 yAxisId="invitations"
                 orientation="right"
-                tick={{ fontSize: 12, fill: effectiveMetric === 'both' ? INVITATIONS_COLOR : undefined }}
+                tick={{ fontSize: isNarrow ? 10 : 12, fill: effectiveMetric === 'both' ? INVITATIONS_COLOR : undefined }}
                 className={effectiveMetric === 'both' ? undefined : 'fill-slate-500 dark:fill-slate-400'}
                 domain={[0, 'dataMax + 500']}
                 width={isNarrow ? 40 : 56}
@@ -485,8 +493,8 @@ export function DrawAnalysisPage() {
 
             <Brush
               dataKey="date"
-              height={32}
-              travellerWidth={12}
+              height={isNarrow ? 24 : 32}
+              travellerWidth={isNarrow ? 16 : 12}
               startIndex={brushRange?.startIndex}
               endIndex={brushRange?.endIndex}
               onChange={(range) => {
