@@ -3,3 +3,15 @@
 body {
   margin: 0;
 }
+
+/* Hides the scrollbar on an overflow-x-auto strip while keeping it scrollable - used for
+   horizontally-scrolling chip rows, where a visible scrollbar track reads as a slider
+   control rather than a scroll-position indicator. */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

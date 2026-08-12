@@ -149,7 +149,7 @@ export function PoolDistributionPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            📊 Express Entry Candidate Pool Distribution
+            Express Entry Candidate Pool Distribution
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Active candidate profile counts broken down by CRS score brackets in the Express Entry pool.
@@ -261,7 +261,7 @@ export function PoolDistributionPage() {
           </div>
 
           {/* Bar Chart */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2 sm:p-6 sm:space-y-4">
             <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Candidate Count by CRS Score Bracket
             </h4>

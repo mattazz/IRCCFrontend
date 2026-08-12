@@ -357,7 +357,7 @@ export function DrawAnalysisPage() {
           </div>
 
           {/* Class chip strip — scrollable on mobile to avoid wrapping chaos */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 snap-x">
+          <div className="scrollbar-hide flex items-center gap-1.5 overflow-x-auto pb-1 snap-x">
             {CLASS_CODES.map((cls) => {
               const active = selectedClasses.includes(cls)
               return (

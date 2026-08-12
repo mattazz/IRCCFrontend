@@ -175,7 +175,7 @@ export function CrsMatcherPage() {
       <div className="space-y-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            🇨🇦 Express Entry CRS Eligibility Matcher
+            Express Entry CRS Eligibility Matcher
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Evaluate your Comprehensive Ranking System (CRS) score against historical Express Entry draws, calculate your ITA match probability, and view score gap insights.
@@ -188,7 +188,7 @@ export function CrsMatcherPage() {
             {/* How to use */}
             <div className="space-y-1.5">
               <h3 className="font-bold text-indigo-900 dark:text-indigo-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <span>🎯</span> How to Use This Tool
+                How to Use This Tool
               </h3>
               <ol className="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-400">
                 <li><strong className="text-slate-800 dark:text-slate-200">Enter your CRS score</strong> using the input field, range slider, or quick presets.</li>
@@ -200,7 +200,7 @@ export function CrsMatcherPage() {
             {/* How we compute */}
             <div className="space-y-1.5">
               <h3 className="font-bold text-indigo-900 dark:text-indigo-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                <span>⚙️</span> How We Compute Your Eligibility
+                How We Compute Your Eligibility
               </h3>
               <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
                 <li><strong className="text-slate-800 dark:text-slate-200">Match Rate:</strong> The percentage of official IRCC draws in your selected window where <code className="font-mono bg-indigo-100 dark:bg-indigo-900/60 px-1 py-0.5 rounded">Your Score ≥ Draw Cutoff</code>.</li>
@@ -469,7 +469,7 @@ export function CrsMatcherPage() {
 
           {/* Active Express Entry Candidate Pool Position Chart */}
           {poolChartData.length > 0 && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-2 sm:p-6 sm:space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 dark:border-slate-800">
                 <div>
                   <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
