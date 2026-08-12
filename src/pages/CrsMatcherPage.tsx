@@ -481,7 +481,7 @@ export function CrsMatcherPage() {
                 </div>
 
                 <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                  📍 Your Score ({score}) is in the <span className="underline font-mono">{userBracket}</span> Bracket
+                  Your Score ({score}) is in the <span className="underline font-mono">{userBracket}</span> Bracket
                 </div>
               </div>
 
