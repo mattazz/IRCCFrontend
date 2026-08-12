@@ -5,6 +5,7 @@ import {
   Legend,
   Line,
   LineChart,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -215,6 +216,16 @@ export function DrawAnalysisPage() {
     return sortByDate(Array.from(byDate.values()))
   }, [data, selectedClasses, rollingAverageActive, rollingWindow])
 
+  // Real, documented outlier (not a data error): Feb 13 2021 was the largest single Express
+  // Entry draw ever and the first to drop under CRS 100 - IRCC issued 27,332 ITAs to nearly
+  // all CEC candidates because pandemic border closures had emptied out other pathways. Left
+  // in the data untouched (truthful), but annotated on the chart so it reads as a known event
+  // rather than noise, since it otherwise swamps the CRS axis scale for the CEC line.
+  const covidMegaDraw = useMemo(
+    () => (selectedClasses.includes('CEC') ? chartData.find((row) => row.date === '2021-02-13' && row.CEC_crs === 75) : undefined),
+    [chartData, selectedClasses],
+  )
+
   // Flat list of actual draws (not merged-by-date rows) across all selected classes, for the
   // stats panel and detail cards - both want real Draw records, not chart-shaped rows. Tagged
   // with the class code each was matched under (see TaggedDraw) so cards can show the right
@@ -253,11 +264,19 @@ export function DrawAnalysisPage() {
     if (uniqueVisibleDraws.length === 0) return null
     const crsValues = uniqueVisibleDraws.map((d) => Number(d.crs))
     const invitationsValues = uniqueVisibleDraws.map((d) => Number(d.drawSize.replace(/,/g, '')))
+    // Median alongside the average - unlike min/max/avg, it isn't dragged around by a single
+    // extreme draw (e.g. the Feb 2021 CEC mega-draw at CRS 75), so it reads as the "typical"
+    // cutoff without altering what min/max/avg truthfully report.
+    const sortedCrs = [...crsValues].sort((a, b) => a - b)
+    const mid = Math.floor(sortedCrs.length / 2)
+    const medianCrs =
+      sortedCrs.length % 2 !== 0 ? sortedCrs[mid] : Math.round(((sortedCrs[mid - 1] + sortedCrs[mid]) / 2) * 10) / 10
     return {
       count: uniqueVisibleDraws.length,
       minCrs: Math.min(...crsValues),
       maxCrs: Math.max(...crsValues),
       avgCrs: Math.round((crsValues.reduce((sum, v) => sum + v, 0) / crsValues.length) * 10) / 10,
+      medianCrs,
       totalInvitations: invitationsValues.reduce((sum, v) => sum + v, 0),
     }
   }, [uniqueVisibleDraws])
@@ -491,6 +510,23 @@ export function DrawAnalysisPage() {
                 />
               ))}
 
+            {covidMegaDraw && showCrs && (
+              <ReferenceDot
+                yAxisId="crs"
+                x="2021-02-13"
+                y={75}
+                r={4}
+                fill="#f59e0b"
+                stroke="none"
+                label={{
+                  value: isNarrow ? 'COVID-19 mega-draw' : 'COVID-19 mega-draw — 27,332 ITAs at CRS 75',
+                  position: 'top',
+                  fontSize: isNarrow ? 9 : 11,
+                  fill: '#f59e0b',
+                }}
+              />
+            )}
+
             <Brush
               dataKey="date"
               height={isNarrow ? 24 : 32}
@@ -512,11 +548,12 @@ export function DrawAnalysisPage() {
       </div>
 
       {stats && (
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-6">
           <StatTile label="Draws" value={String(stats.count)} />
           <StatTile label="Min CRS" value={String(stats.minCrs)} />
           <StatTile label="Max CRS" value={String(stats.maxCrs)} />
           <StatTile label="Avg CRS" value={String(stats.avgCrs)} />
+          <StatTile label="Median CRS" value={String(stats.medianCrs)} />
           <StatTile label="Total invitations" value={stats.totalInvitations.toLocaleString()} />
         </div>
       )}
