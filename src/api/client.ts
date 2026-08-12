@@ -27,7 +27,7 @@ async function request<T>(path: string, params?: Record<string, string | number>
     }
   }
 
-  const res = await fetch(url)
+  const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) {
     const body: { error?: string } = await res.json().catch(() => ({}))
     throw new ApiError(res.status, body.error ?? res.statusText)

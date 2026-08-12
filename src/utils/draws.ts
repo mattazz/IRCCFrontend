@@ -1,4 +1,4 @@
-import { CLASS_NAMES, type ClassCode, type Draw } from '../types/api'
+import { CLASS_MATCH_KEYWORDS, type ClassCode, type Draw } from '../types/api'
 
 /**
  * Filters an already-fetched draw list down to one class, by matching the class field.
@@ -7,6 +7,6 @@ import { CLASS_NAMES, type ClassCode, type Draw } from '../types/api'
  * chase the backend's subclass fallback, keeping this predictable for a first version.
  */
 export function filterDrawsByClass(draws: Draw[], classCode: ClassCode): Draw[] {
-  const className = CLASS_NAMES[classCode]
-  return draws.filter((draw) => draw.class.includes(className))
+  const keyword = CLASS_MATCH_KEYWORDS[classCode].toLowerCase()
+  return draws.filter((draw) => draw.class.toLowerCase().includes(keyword))
 }

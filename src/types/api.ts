@@ -85,3 +85,22 @@ export const CLASS_NAMES: Record<ClassCode, string> = {
   TRAN: 'Transport occupations',
   AGRI: 'Agriculture and agri-food occupations',
 }
+
+// Distinct, stable keyword per class used to match a draw's raw `class` text (case-insensitive).
+// IRCC has changed the wording/casing/punctuation of these names over time (e.g. "French
+// language proficiency (Version 1)" -> "French-Language proficiency 2026-Version 2",
+// "Healthcare occupations" -> "Healthcare and Social Services Occupations, 2026-Version 3") -
+// a short, distinctive root word survives that kind of drift instead of breaking on it.
+export const CLASS_MATCH_KEYWORDS: Record<ClassCode, string> = {
+  CEC: 'Canadian Experience Class',
+  FSW: 'Federal Skilled Worker',
+  FST: 'Federal Skilled Trades',
+  PNP: 'Provincial Nominee Program',
+  FLP: 'French',
+  TO: 'Trade',
+  HO: 'Healthcare',
+  STEM: 'STEM',
+  GEN: 'General',
+  TRAN: 'Transport',
+  AGRI: 'Agriculture',
+}

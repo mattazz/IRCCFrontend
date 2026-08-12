@@ -35,6 +35,9 @@ type TaggedDraw = Draw & { matchedClassCode: ClassCode }
 
 const INVITATIONS_COLOR = '#10b981' // emerald-500
 
+// Matches the backend's draws cache refresh interval (dataCache.js).
+const DRAWS_REFETCH_INTERVAL_MS = 15 * 60 * 1000
+
 // One color per class, reused for its line, rolling-average line, and chip. CEC stays blue
 // to match the chart's original single-class default.
 const CLASS_COLORS: Record<ClassCode, string> = {
@@ -136,10 +139,10 @@ export function DrawAnalysisPage() {
   // otherwise crowd out the plot area on a phone-width dual-axis chart.
   const isNarrow = useMediaQuery('(max-width: 639px)')
 
-  // Fetched once - the full history doesn't depend on which class(es)/metric are selected;
-  // filtering, comparison, and metric selection all happen client-side so switching is
-  // instant, no refetch.
-  const { data, error, loading } = useApiData<Draw[]>(() => api.draws.all(), [])
+  // Filtering, comparison, and metric selection all happen client-side so switching is
+  // instant. Polled at the same cadence as the backend's draws cache refresh so a tab left
+  // open picks up new draws without a manual reload.
+  const { data, error, loading } = useApiData<Draw[]>(() => api.draws.all(), [], DRAWS_REFETCH_INTERVAL_MS)
 
   const isMultiClass = selectedClasses.length > 1
   // Comparing invitations (or both metrics) across multiple classes at once would need a
