@@ -22,7 +22,9 @@ export function Section({
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+        <h2 className="font-display text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          {title}
+        </h2>
         {action}
       </div>
 

@@ -194,10 +194,10 @@ export function PoolDistributionPage() {
       {!loading && !error && selectedDraw && (
         <>
           {/* Overview Banner */}
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-6 dark:border-indigo-950/60 dark:bg-indigo-950/20">
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-6 dark:border-brand-950/40 dark:bg-brand-950/20">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300">
                   Pool Snapshot as of {selectedDraw.poolDistributionAsOn || selectedDraw.date}
                 </span>
                 <h3 className="mt-1 text-2xl font-black font-mono text-slate-900 dark:text-slate-100">
@@ -213,7 +213,7 @@ export function PoolDistributionPage() {
                   href={selectedDraw.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-brand-700 transition-colors"
                 >
                   Official IRCC Page ↗
                 </a>
@@ -225,7 +225,7 @@ export function PoolDistributionPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">High Scores (501–1200)</span>
-              <p className="mt-1 text-2xl font-bold font-mono text-indigo-600 dark:text-indigo-400">
+              <p className="mt-1 text-2xl font-bold font-mono text-brand-600 dark:text-brand-400">
                 {highPoolCount.toLocaleString()}
               </p>
               <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -235,7 +235,7 @@ export function PoolDistributionPage() {
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Mid-High Scores (451–500)</span>
-              <p className="mt-1 text-2xl font-bold font-mono text-blue-600 dark:text-blue-400">
+              <p className="mt-1 text-2xl font-bold font-mono text-slate-700 dark:text-slate-300">
                 {highMidPoolCount.toLocaleString()}
               </p>
               <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -333,13 +333,13 @@ export function PoolDistributionPage() {
                       <td className="px-4 py-3 text-right font-bold text-slate-900 dark:text-slate-100">
                         {row.count.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-right text-indigo-600 dark:text-indigo-400 font-bold">
+                      <td className="px-4 py-3 text-right text-brand-600 dark:text-brand-400 font-bold">
                         {row.percentage}%
                       </td>
                       <td className="px-4 py-3">
                         <div className="h-2.5 w-full max-w-xs rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-indigo-500"
+                            className="h-full rounded-full bg-brand-500"
                             style={{ width: `${Math.min(100, row.percentage * 3)}%` }}
                           />
                         </div>

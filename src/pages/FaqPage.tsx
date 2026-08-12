@@ -63,7 +63,7 @@ export function FaqPage() {
             href={current.link.url}
             target="_blank"
             rel="noreferrer"
-            className="inline-block text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+            className="inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
           >
             {current.link.label} →
           </a>

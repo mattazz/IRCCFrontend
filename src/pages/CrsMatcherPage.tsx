@@ -174,7 +174,7 @@ export function CrsMatcherPage() {
       {/* Header Banner */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             Express Entry CRS Eligibility Matcher
           </h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -183,11 +183,11 @@ export function CrsMatcherPage() {
         </div>
 
         {/* How it works & How to use guide */}
-        <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-950/60 dark:bg-indigo-950/20 text-xs text-slate-700 dark:text-slate-300 space-y-3">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-800/40 text-xs text-slate-700 dark:text-slate-300 space-y-3">
           <div className="grid gap-4 sm:grid-cols-2">
             {/* How to use */}
             <div className="space-y-1.5">
-              <h3 className="font-bold text-indigo-900 dark:text-indigo-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="font-bold text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
                 How to Use This Tool
               </h3>
               <ol className="list-decimal list-inside space-y-1 text-slate-600 dark:text-slate-400">
@@ -199,12 +199,12 @@ export function CrsMatcherPage() {
 
             {/* How we compute */}
             <div className="space-y-1.5">
-              <h3 className="font-bold text-indigo-900 dark:text-indigo-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="font-bold text-slate-700 dark:text-slate-300 text-xs uppercase tracking-wider flex items-center gap-1.5">
                 How We Compute Your Eligibility
               </h3>
               <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400">
-                <li><strong className="text-slate-800 dark:text-slate-200">Match Rate:</strong> The percentage of official IRCC draws in your selected window where <code className="font-mono bg-indigo-100 dark:bg-indigo-900/60 px-1 py-0.5 rounded">Your Score ≥ Draw Cutoff</code>.</li>
-                <li><strong className="text-slate-800 dark:text-slate-200">Score Gaps:</strong> Point differential (<code className="font-mono bg-indigo-100 dark:bg-indigo-900/60 px-1 py-0.5 rounded">Your Score - Cutoff</code>) comparing your score to latest, min, max, and average cutoffs.</li>
+                <li><strong className="text-slate-800 dark:text-slate-200">Match Rate:</strong> The percentage of official IRCC draws in your selected window where <code className="font-mono bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">Your Score ≥ Draw Cutoff</code>.</li>
+                <li><strong className="text-slate-800 dark:text-slate-200">Score Gaps:</strong> Point differential (<code className="font-mono bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded">Your Score - Cutoff</code>) comparing your score to latest, min, max, and average cutoffs.</li>
                 <li><strong className="text-slate-800 dark:text-slate-200">Draw Badges:</strong> Every past draw is annotated with <span className="font-semibold text-emerald-600 dark:text-emerald-400">✅ Qualified</span> (received an ITA) or <span className="font-semibold text-rose-600 dark:text-rose-400">❌ Missed</span>.</li>
               </ul>
             </div>
@@ -232,7 +232,7 @@ export function CrsMatcherPage() {
               {/* Score Input & Slider */}
               <div className="space-y-3">
                 <label className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Your Current CRS Score: <span className="text-indigo-600 dark:text-indigo-400 font-mono text-lg">{score}</span>
+                  Your Current CRS Score: <span className="text-brand-600 dark:text-brand-400 font-mono text-lg">{score}</span>
                 </label>
                 {/* On mobile: stack slider and number input vertically */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
@@ -242,7 +242,7 @@ export function CrsMatcherPage() {
                     max="1200"
                     value={score}
                     onChange={(e) => setScore(Number(e.target.value))}
-                    className="h-2 w-full accent-indigo-600 cursor-pointer rounded-lg bg-slate-200 dark:bg-slate-700 sm:flex-1"
+                    className="h-2 w-full accent-brand-600 cursor-pointer rounded-lg bg-slate-200 dark:bg-slate-700 sm:flex-1"
                   />
                   <input
                     type="number"
@@ -263,7 +263,7 @@ export function CrsMatcherPage() {
                       onClick={() => setScore(preset)}
                       className={`min-h-[40px] rounded-md px-2.5 py-1.5 text-xs font-mono font-medium transition-colors ${
                         score === preset
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-brand-600 text-white'
                           : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
                       }`}
                     >
@@ -381,7 +381,7 @@ export function CrsMatcherPage() {
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
               <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Percentile Rank</span>
-              <p className="mt-1 text-2xl font-bold text-indigo-600 dark:text-indigo-400 font-mono">
+              <p className="mt-1 text-2xl font-bold text-brand-600 dark:text-brand-400 font-mono">
                 Top {100 - matchResult.percentileRank}%
               </p>
               <span className="text-xs text-slate-500 dark:text-slate-400">ahead of {matchResult.percentileRank}% of cutoffs</span>
@@ -408,7 +408,7 @@ export function CrsMatcherPage() {
                 <div className="relative h-6 w-full rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   {/* Fill up to user score percentage */}
                   <div
-                    className="h-full rounded-full bg-indigo-500/30 transition-all duration-300"
+                    className="h-full rounded-full bg-brand-500/30 transition-all duration-300"
                     style={{ width: `${Math.max(5, Math.min(100, (score / 700) * 100))}%` }}
                   />
                   {/* Indicator Pin */}
@@ -416,8 +416,8 @@ export function CrsMatcherPage() {
                     className="absolute -top-3 bottom-0 flex flex-col items-center transition-all duration-300"
                     style={{ left: `${Math.max(2, Math.min(95, (score / 700) * 100))}%` }}
                   >
-                    <div className="h-12 w-1 bg-indigo-600 dark:bg-indigo-400 rounded-full" />
-                    <span className="mt-1 rounded-md bg-indigo-600 px-2 py-0.5 font-mono text-xs font-bold text-white shadow-xs">
+                    <div className="h-12 w-1 bg-brand-600 dark:bg-brand-400 rounded-full" />
+                    <span className="mt-1 rounded-md bg-brand-600 px-2 py-0.5 font-mono text-xs font-bold text-white shadow-xs">
                       You: {score}
                     </span>
                   </div>
@@ -486,9 +486,9 @@ export function CrsMatcherPage() {
               </div>
 
               {/* Pool Competitiveness Banner */}
-              <div className="rounded-xl bg-indigo-50/70 p-4 text-xs text-slate-700 dark:bg-indigo-950/30 dark:text-slate-300 border border-indigo-100 dark:border-indigo-900/40 flex flex-wrap items-center justify-between gap-3">
+              <div className="rounded-xl bg-slate-50 p-4 text-xs text-slate-700 dark:bg-slate-800/50 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <strong className="text-indigo-900 dark:text-indigo-200 block text-sm font-mono">
+                  <strong className="text-slate-800 dark:text-slate-200 block text-sm font-mono">
                     {candidatesHigherThanUser.toLocaleString()} candidates in higher score brackets
                   </strong>
                   <span>
@@ -604,7 +604,7 @@ export function CrsMatcherPage() {
                             href={d.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
                           >
                             #{d.drawNumber} <span className="text-[10px]">↗</span>
                           </a>
@@ -647,7 +647,7 @@ export function CrsMatcherPage() {
                           href={d.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
                         >
                           #{d.drawNumber} <span className="text-[10px]">↗</span>
                         </a>

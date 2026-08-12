@@ -111,7 +111,7 @@ function DrawCard({ draw, change }: { draw: TaggedDraw; change: CrsChangeInfo | 
             href={draw.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1"
+            className="font-semibold text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 inline-flex items-center gap-1"
           >
             Draw #{draw.drawNumber} <span className="text-[10px]">↗</span>
           </a>
@@ -334,7 +334,7 @@ export function DrawAnalysisPage() {
                     onClick={() => setMetric(opt.value)}
                     className={`min-h-[40px] px-3 py-2 text-sm transition-colors ${
                       effectiveMetric === opt.value
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-brand-600 text-white'
                         : disabled
                           ? 'cursor-not-allowed bg-white text-slate-300 dark:bg-slate-800 dark:text-slate-600'
                           : 'bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'

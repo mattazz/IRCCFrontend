@@ -51,7 +51,7 @@ export function DrawsSection() {
               </option>
             ))}
           </select>
-          <Link to="/draws" className="whitespace-nowrap text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+          <Link to="/draws" className="whitespace-nowrap text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
             Full draw analysis →
           </Link>
         </div>
@@ -80,7 +80,7 @@ export function DrawsSection() {
                         href={draw.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
                       >
                         #{draw.drawNumber} <span className="text-xs">↗</span>
                       </a>
@@ -144,7 +144,7 @@ export function DrawsSection() {
                       href={draw.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+                      className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300"
                     >
                       #{draw.drawNumber} <span className="text-xs">↗</span>
                     </a>
