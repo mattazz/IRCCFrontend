@@ -32,12 +32,15 @@ src/
     SpeechesSection.tsx       Home page: latest speeches list
   pages/
     HomePage.tsx            Composes the three home sections
-    DrawAnalysisPage.tsx     /draws - chart, filters, comparison, stats, detail cards (the bulk of the app's logic)
+    DrawAnalysisPage.tsx     /draws - chart, filters, comparison, stats, detail cards
+    CrsMatcherPage.tsx       /matcher - CRS score & ITA draw match probability tool
+    PoolDistributionPage.tsx /pool - Active Express Entry candidate pool distribution bar chart & tables
     FaqPage.tsx              /faq - click-through decision-tree FAQ, content from src/data/faqContent.ts
   data/
     faqContent.ts            FaqNode tree - immigration FAQ content, ported from IRCCBackend's Telegram bot
   utils/
     draws.ts                filterDrawsByClass - client-side class filtering
+    matcher.ts              computeDrawMatch - client-side match rates & eligibility calculations
     rollingAverage.ts        computeRollingAverage - TS port of the backend's rolling-average algorithm
     dateOrder.ts             sortByDate / filterByDateRange - shared chronological sort + inclusive date-range filter
     csv.ts                   drawsToCsv - CSV export for the draw-analysis page

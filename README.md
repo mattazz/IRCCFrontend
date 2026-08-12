@@ -37,9 +37,12 @@ Requires a running instance of [IRCCBackend](https://github.com/mattazz/IRCCBack
 
 ## Pages
 
-- **`/`** — News, latest draws (with a class filter), and speeches, each in its own section.
+- **`/`** — News, latest draws (with direct official web links, category badges, program eligibility, and tie-breaking details), and official speeches.
 - **`/draws`** — Full Express Entry draw history: CRS/invitations trend chart, rolling-average overlay, multi-class comparison, date-range brush, summary stats, and per-draw detail cards.
+- **`/matcher`** — Interactive CRS Score & Draw Eligibility Matcher: candidate score slider, verdict banner, ITA match rate, percentile position gauge, points gap advice, and historical draw qualification breakdown.
+- **`/pool`** — Candidate Pool Distribution Dashboard: Recharts bar chart of active Express Entry profiles broken down by 15 score brackets (`601–1200`, `501–600`, `491–500`, etc.), total candidates, and snapshot selector.
+- **`/faq`** — Interactive FAQ guide covering Express Entry & Provincial Nominee Programs.
 
 ## Project status
 
-Actively developed. All five phases of the draw-analysis page's [dev plan](./docs/DRAW_ANALYSIS_PLAN.md) are complete; one manual check (brush touch-drag on a real device) is still outstanding.
+Actively developed. All phases of the draw-analysis page ([`docs/DRAW_ANALYSIS_PLAN.md`](./docs/DRAW_ANALYSIS_PLAN.md)) and CRS Matcher page ([`docs/CRS_MATCHER_PLAN.md`](./docs/CRS_MATCHER_PLAN.md)) are complete with 100% automated test coverage (41 tests).

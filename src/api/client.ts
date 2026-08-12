@@ -49,6 +49,12 @@ export const api = {
     filter: (classCode: ClassCode) => request<DrawFilterResult>(`/api/v1/draws/filter/${classCode}`),
     rollingAverage: (classCode: ClassCode) =>
       request<RollingAverageResult>(`/api/v1/draws/rolling-average/${classCode}`),
+    match: (score: number, classCode?: string, timeframeMonths?: number) =>
+      request<DrawMatchResult>('/api/v1/draws/match', {
+        score,
+        ...(classCode ? { classCode } : {}),
+        ...(timeframeMonths !== undefined ? { timeframeMonths } : {}),
+      }),
   },
   speeches: {
     latest: (count = 10) => request<SpeechArticle[]>('/api/v1/speeches/latest', { count }),

@@ -100,11 +100,56 @@ function StatTile({ label, value }: { label: string; value: string }) {
   )
 }
 
-function DrawCard({ draw }: { draw: TaggedDraw }) {
+interface CrsChangeInfo {
+  diff: number
+  formatted: string
+  prevDrawNumber: string
+  prevCrs: string
+}
+
+function getCrsChangeForDraw(draw: TaggedDraw, allDrawsSortedDesc: Draw[]): CrsChangeInfo | null {
+  const crsNum = Number(draw.crs)
+  if (isNaN(crsNum)) return null
+
+  const targetCategory = draw.matchedClassCode
+  const currentIndex = allDrawsSortedDesc.findIndex((d) => d.drawNumber === draw.drawNumber)
+  if (currentIndex === -1) return null
+
+  for (let i = currentIndex + 1; i < allDrawsSortedDesc.length; i++) {
+    const prev = allDrawsSortedDesc[i]
+    if (filterDrawsByClass([prev], targetCategory).length > 0) {
+      const prevCrs = Number(prev.crs)
+      if (!isNaN(prevCrs)) {
+        const diff = crsNum - prevCrs
+        return {
+          diff,
+          formatted: diff > 0 ? `+${diff}` : `${diff}`,
+          prevDrawNumber: prev.drawNumber,
+          prevCrs: prev.crs,
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+function DrawCard({ draw, change }: { draw: TaggedDraw; change: CrsChangeInfo | null }) {
   return (
     <div className="rounded-md border border-slate-200 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-slate-900 dark:text-slate-100">Draw #{draw.drawNumber}</span>
+        {draw.url ? (
+          <a
+            href={draw.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 inline-flex items-center gap-1"
+          >
+            Draw #{draw.drawNumber} <span className="text-[10px]">↗</span>
+          </a>
+        ) : (
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Draw #{draw.drawNumber}</span>
+        )}
         <span
           className="rounded-full px-2 py-0.5 text-xs font-medium text-white"
           style={{ backgroundColor: CLASS_COLORS[draw.matchedClassCode] }}
@@ -112,14 +157,29 @@ function DrawCard({ draw }: { draw: TaggedDraw }) {
           {draw.date}
         </span>
       </div>
-      <p className="mt-1 text-slate-600 dark:text-slate-300">{draw.class}</p>
-      {draw.subclass !== draw.class && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">{draw.subclass}</p>
+      <p className="mt-1 font-medium text-slate-700 dark:text-slate-200">{draw.class}</p>
+      {draw.subclass && draw.subclass !== draw.class && (
+        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{draw.subclass}</p>
       )}
-      <div className="mt-2 flex gap-4 text-xs text-slate-600 dark:text-slate-300">
-        <span>
-          CRS: <span className="font-semibold text-slate-900 dark:text-slate-100">{draw.crs}</span>
-        </span>
+      <div className="mt-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+        <div className="flex items-center gap-2">
+          <span>
+            CRS: <span className="font-semibold text-slate-900 dark:text-slate-100">{draw.crs}</span>
+          </span>
+          {change && change.diff !== 0 && (
+            <span
+              className={`font-mono font-bold flex items-center gap-0.5 ${
+                change.diff < 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}
+              title={`CRS change vs previous ${draw.matchedClassCode} draw (#${change.prevDrawNumber}, CRS ${change.prevCrs})`}
+            >
+              {change.diff < 0 ? '↓' : '↑'}
+              {change.formatted} pts
+            </span>
+          )}
+        </div>
         <span>
           Invitations: <span className="font-semibold text-slate-900 dark:text-slate-100">{draw.drawSize}</span>
         </span>
@@ -192,6 +252,13 @@ export function DrawAnalysisPage() {
   // stats panel and detail cards - both want real Draw records, not chart-shaped rows. Tagged
   // with the class code each was matched under (see TaggedDraw) so cards can show the right
   // color without reverse-parsing the raw class text.
+  const allDrawsSortedDesc = useMemo(() => {
+    if (!data) return []
+    return [...data].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || Number(b.drawNumber) - Number(a.drawNumber)
+    )
+  }, [data])
+
   const allSelectedDraws = useMemo<TaggedDraw[]>(() => {
     if (!data) return []
     return sortByDate(
@@ -490,9 +557,16 @@ export function DrawAnalysisPage() {
             )}
           </h3>
           <div className="grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-            {[...visibleDraws].reverse().map((draw) => (
-              <DrawCard key={`${draw.drawNumber}-${draw.matchedClassCode}`} draw={draw} />
-            ))}
+            {[...visibleDraws].reverse().map((draw) => {
+              const change = getCrsChangeForDraw(draw, allDrawsSortedDesc)
+              return (
+                <DrawCard
+                  key={`${draw.drawNumber}-${draw.matchedClassCode}`}
+                  draw={draw}
+                  change={change}
+                />
+              )
+            })}
           </div>
         </div>
       )}

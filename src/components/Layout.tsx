@@ -26,6 +26,12 @@ export function Layout({ children }: { children: ReactNode }) {
             <NavLink to="/draws" className={navLinkClass}>
               Draw Analysis
             </NavLink>
+            <NavLink to="/matcher" className={navLinkClass}>
+              CRS Matcher
+            </NavLink>
+            <NavLink to="/pool" className={navLinkClass}>
+              Pool Breakdown
+            </NavLink>
             <NavLink to="/faq" className={navLinkClass}>
               FAQ
             </NavLink>

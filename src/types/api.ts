@@ -10,6 +10,26 @@ export interface NewsItem {
   [key: string]: unknown // other RSS fields are passed through as-is
 }
 
+export interface PoolDistribution {
+  '601-1200'?: string
+  '501-600'?: string
+  '451-500'?: string
+  '491-500'?: string
+  '481-490'?: string
+  '471-480'?: string
+  '461-470'?: string
+  '451-460'?: string
+  '401-450'?: string
+  '441-450'?: string
+  '431-440'?: string
+  '421-430'?: string
+  '411-420'?: string
+  '401-410'?: string
+  '351-400'?: string
+  '301-350'?: string
+  '0-300'?: string
+}
+
 export interface Draw {
   date: string
   drawNumber: string
@@ -17,6 +37,12 @@ export interface Draw {
   class: string
   subclass: string
   drawSize: string
+  url?: string
+  tieBreakingRule?: string
+  drawDateTime?: string
+  poolDistributionAsOn?: string
+  poolTotal?: string
+  poolDistribution?: PoolDistribution | null
 }
 
 export interface DrawFilterResult {
@@ -44,6 +70,30 @@ export interface SpeechArticle {
   url: string
   date: string
   summary: string
+}
+
+export interface DrawMatchResult {
+  userScore: number
+  classCode: string
+  className: string
+  timeframeMonths: number
+  totalDraws: number
+  qualifyingDrawsCount: number
+  matchRatePercentage: number
+  chanceLevel: 'High' | 'Moderate' | 'Low' | 'Unlikely'
+  latestCutoff: number | null
+  averageCutoff: number | null
+  minCutoff: number | null
+  maxCutoff: number | null
+  scoreGapLatest: number | null
+  scoreGapAverage: number | null
+  percentileRank: number
+  recommendations: {
+    pointsToLatest: number
+    pointsToAverage: number
+    pointsTo75thPercentile: number
+  }
+  draws: Array<Draw & { qualified: boolean; gap: number }>
 }
 
 export interface HealthResponse {
