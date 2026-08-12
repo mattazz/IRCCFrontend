@@ -64,14 +64,14 @@ export function CrsMatcherPage() {
 
   const latestPoolDraw = useMemo(() => {
     return [...allDraws].reverse().find((d) => {
-      const rawTotal = d.poolTotal || ((d as Record<string, unknown>).dd18 as string)
+      const rawTotal = d.poolTotal || ((d as unknown as Record<string, unknown>).dd18 as string)
       return rawTotal && Number(rawTotal.replace(/,/g, '')) > 0
     })
   }, [allDraws])
 
   const poolTotalNum = useMemo(() => {
     if (!latestPoolDraw) return 0
-    const raw = latestPoolDraw.poolTotal || ((latestPoolDraw as Record<string, unknown>).dd18 as string)
+    const raw = latestPoolDraw.poolTotal || ((latestPoolDraw as unknown as Record<string, unknown>).dd18 as string)
     return raw ? Number(raw.replace(/,/g, '')) || 0 : 0
   }, [latestPoolDraw])
 
@@ -96,7 +96,7 @@ export function CrsMatcherPage() {
   const poolChartData = useMemo(() => {
     if (!latestPoolDraw) return []
     const dist = (latestPoolDraw.poolDistribution as Record<string, string>) || {}
-    const raw = latestPoolDraw as Record<string, unknown>
+    const raw = latestPoolDraw as unknown as Record<string, unknown>
     const getVal = (key: string, fallbackKey: string) => {
       const v = dist[key] || (raw[fallbackKey] as string) || '0'
       return Number(v.toString().replace(/,/g, '')) || 0
@@ -507,10 +507,13 @@ export function CrsMatcherPage() {
                     />
                     <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip
-                      formatter={(value: number) => [
-                        `${value.toLocaleString()} candidates (${poolTotalNum > 0 ? ((value / poolTotalNum) * 100).toFixed(1) : 0}%)`,
-                        'Candidates',
-                      ]}
+                      formatter={(value) => {
+                        const num = Number(value) || 0
+                        return [
+                          `${num.toLocaleString()} candidates (${poolTotalNum > 0 ? ((num / poolTotalNum) * 100).toFixed(1) : 0}%)`,
+                          'Candidates',
+                        ]
+                      }}
                       labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
                     />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>

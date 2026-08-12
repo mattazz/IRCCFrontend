@@ -2,6 +2,7 @@ import type {
   ClassCode,
   Draw,
   DrawFilterResult,
+  DrawMatchResult,
   HealthResponse,
   NewsItem,
   RollingAverageResult,

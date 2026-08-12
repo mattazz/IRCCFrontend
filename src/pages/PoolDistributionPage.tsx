@@ -77,7 +77,7 @@ export function PoolDistributionPage() {
 
   const poolTotalNum = useMemo(() => {
     if (!selectedDraw) return 0
-    const rawTotal = selectedDraw.poolTotal || (selectedDraw as Record<string, unknown>).dd18 as string
+    const rawTotal = selectedDraw.poolTotal || (selectedDraw as unknown as Record<string, unknown>).dd18 as string
     return parseNum(rawTotal)
   }, [selectedDraw])
 
@@ -86,18 +86,19 @@ export function PoolDistributionPage() {
     if (selectedDraw.poolDistribution) {
       return selectedDraw.poolDistribution as Record<string, string>
     }
-    const raw = selectedDraw as Record<string, unknown>
+    const raw = selectedDraw as unknown as Record<string, unknown>
     if (raw.dd18 || raw.dd1) {
+      // dd1-dd17 partition into 15 non-overlapping brackets covering 0-1200 - dd3 and dd9 are
+      // not part of that partition (see the matching fix in the backend's irccDrawScraper.js)
+      // and are intentionally left out here rather than exposed under overlapping labels.
       return {
         '601-1200': (raw.dd1 as string) || '0',
         '501-600': (raw.dd2 as string) || '0',
-        '451-500': (raw.dd3 as string) || '0',
         '491-500': (raw.dd4 as string) || '0',
         '481-490': (raw.dd5 as string) || '0',
         '471-480': (raw.dd6 as string) || '0',
         '461-470': (raw.dd7 as string) || '0',
         '451-460': (raw.dd8 as string) || '0',
-        '401-450': (raw.dd9 as string) || '0',
         '441-450': (raw.dd10 as string) || '0',
         '431-440': (raw.dd11 as string) || '0',
         '421-430': (raw.dd12 as string) || '0',
@@ -275,10 +276,13 @@ export function PoolDistributionPage() {
                   />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip
-                    formatter={(value: number) => [
-                      `${value.toLocaleString()} candidates (${poolTotalNum > 0 ? ((value / poolTotalNum) * 100).toFixed(1) : 0}%)`,
-                      'Candidates',
-                    ]}
+                    formatter={(value) => {
+                      const num = Number(value) || 0
+                      return [
+                        `${num.toLocaleString()} candidates (${poolTotalNum > 0 ? ((num / poolTotalNum) * 100).toFixed(1) : 0}%)`,
+                        'Candidates',
+                      ]
+                    }}
                     labelStyle={{ color: '#0f172a', fontWeight: 'bold' }}
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
