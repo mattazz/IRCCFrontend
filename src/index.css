@@ -1,7 +1,32 @@
 @import "tailwindcss";
 
+/* Institutional red (Pantone 186C, the shade used in Team Canada branding) as the brand
+   accent - reserved for primary actions, brand mark, and active nav state. Kept as its own
+   scale (not reusing Tailwind's red/rose) so it never collides with the existing rose used
+   for "score went down" deltas elsewhere in the app. */
+@theme {
+  --color-brand-50: #fdf2f2;
+  --color-brand-100: #fce4e4;
+  --color-brand-200: #f9cdd0;
+  --color-brand-300: #f3a7ac;
+  --color-brand-400: #e8737b;
+  --color-brand-500: #d84652;
+  --color-brand-600: #c8102e;
+  --color-brand-700: #a80d27;
+  --color-brand-800: #8a0f24;
+  --color-brand-900: #731022;
+  --color-brand-950: #400810;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
 body {
   margin: 0;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
 }
 
 /* Hides the scrollbar on an overflow-x-auto strip while keeping it scrollable - used for

@@ -12,9 +12,23 @@ const NAV_LINKS = [
 const desktopLinkClass = ({ isActive }: { isActive: boolean }) =>
   `text-sm font-medium transition-colors ${
     isActive
-      ? 'text-slate-900 dark:text-slate-100'
+      ? 'text-brand-600 dark:text-brand-400'
       : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
   }`
+
+// The mark: three bars crossing a cutoff line - the score-vs-cutoff comparison every page in
+// this app is built around, standing in for a generic flag/maple-leaf mark.
+function Mark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+      <rect width="32" height="32" rx="8" className="fill-brand-600" />
+      <rect x="7" y="18" width="4" height="8" rx="1" fill="#F5EFE0" fillOpacity="0.35" />
+      <rect x="14" y="12" width="4" height="14" rx="1" fill="#F5EFE0" />
+      <rect x="21" y="8" width="4" height="18" rx="1" fill="#F5EFE0" />
+      <line x1="4" y1="15" x2="28" y2="15" stroke="#F5EFE0" strokeWidth="1.4" strokeDasharray="2.5 2.5" />
+    </svg>
+  )
+}
 
 export function Layout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,13 +60,13 @@ export function Layout({ children }: { children: ReactNode }) {
       >
         {/* Main header row */}
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-3 py-4 sm:px-6 sm:py-6">
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
-              🇨🇦 IRCC News
-            </h1>
-            <p className="mt-0.5 hidden text-sm text-slate-500 dark:text-slate-400 sm:block">
-              Immigration, Refugees and Citizenship Canada — news, Express Entry draws, and speeches.
-            </p>
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <Mark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+            <div className="min-w-0">
+              <h1 className="font-display text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100 sm:text-2xl">
+                IRCC News
+              </h1>
+            </div>
           </div>
 
           {/* Desktop nav */}
@@ -121,10 +135,10 @@ export function Layout({ children }: { children: ReactNode }) {
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `flex min-h-[48px] items-center px-4 text-sm font-medium transition-colors ${
+                  `flex min-h-[48px] items-center border-l-2 px-4 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-slate-50 text-slate-900 dark:bg-slate-800 dark:text-slate-100'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/30 dark:text-brand-400'
+                      : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                   }`
                 }
               >
