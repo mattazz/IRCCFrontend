@@ -21,7 +21,8 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, params?: Record<string, string | number>): Promise<T> {
-  const url = new URL(path, API_BASE_URL)
+  const base = API_BASE_URL || window.location.origin
+  const url = new URL(path, base)
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, String(value))
