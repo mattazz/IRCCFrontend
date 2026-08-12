@@ -302,7 +302,7 @@ export function DrawAnalysisPage() {
       action={
         <div className="flex flex-col gap-2">
           {/* Metric toggle + rolling average — stacks vertically on mobile */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
             <div className="inline-flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-700">
               {METRIC_OPTIONS.map((opt) => {
                 const disabled = isMultiClass && opt.value !== 'crs'

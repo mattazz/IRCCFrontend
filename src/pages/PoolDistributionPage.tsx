@@ -162,7 +162,7 @@ export function PoolDistributionPage() {
             <select
               value={selectedIndex}
               onChange={(e) => setSelectedIndex(Number(e.target.value))}
-              className="min-h-[40px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 font-mono"
+              className="min-h-[40px] w-full truncate rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 font-mono sm:w-auto sm:max-w-xs"
             >
               {draws.map((d, i) => (
                 <option key={d.drawNumber} value={i}>
