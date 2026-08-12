@@ -9,7 +9,10 @@ import type {
   SpeechArticle,
 } from '../types/api'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+// Falls back to whatever host the page itself was loaded from, on the backend's port - so
+// dev also works unmodified when a phone on the same LAN loads the frontend by IP instead of
+// localhost (where a hardcoded "localhost" would otherwise resolve to the phone itself).
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:3000`
 
 export class ApiError extends Error {
   status: number
@@ -21,8 +24,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, params?: Record<string, string | number>): Promise<T> {
-  const base = API_BASE_URL || window.location.origin
-  const url = new URL(path, base)
+  const url = new URL(path, API_BASE_URL)
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.set(key, String(value))
