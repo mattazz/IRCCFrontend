@@ -5,53 +5,9 @@ import { useApiData } from '../hooks/useApiData'
 import { Section } from './Section'
 import { CLASS_CODES, CLASS_NAMES, type ClassCode, type Draw } from '../types/api'
 import { filterDrawsByClass } from '../utils/draws'
+import { getCrsChangeForDraw } from '../utils/crsChange'
 
 const ALL = 'ALL' as const
-
-function normalizeCategory(name?: string): string {
-  if (!name) return ''
-  const l = name.toLowerCase()
-  if (l.includes('french')) return 'french'
-  if (l.includes('canadian experience class') || l.includes('cec')) return 'cec'
-  if (l.includes('provincial nominee') || l.includes('pnp')) return 'pnp'
-  if (l.includes('transport')) return 'transport'
-  if (l.includes('healthcare')) return 'healthcare'
-  if (l.includes('stem')) return 'stem'
-  if (l.includes('trade')) return 'trades'
-  if (l.includes('agriculture') || l.includes('agri-food')) return 'agri'
-  if (l.includes('skilled worker') || l.includes('fsw')) return 'fsw'
-  return l.replace(/[^a-z0-9]/g, '')
-}
-
-function getCrsChange(
-  currentDraw: Draw,
-  allDrawsSortedDesc: Draw[]
-): { diff: number; formatted: string; prevDrawNumber: string; prevCrs: string } | null {
-  const currentCrs = Number(currentDraw.crs)
-  if (isNaN(currentCrs)) return null
-
-  const currentCategory = normalizeCategory(currentDraw.class)
-  const currentIndex = allDrawsSortedDesc.findIndex((d) => d.drawNumber === currentDraw.drawNumber)
-  if (currentIndex === -1) return null
-
-  for (let i = currentIndex + 1; i < allDrawsSortedDesc.length; i++) {
-    const prevDraw = allDrawsSortedDesc[i]
-    if (normalizeCategory(prevDraw.class) === currentCategory) {
-      const prevCrs = Number(prevDraw.crs)
-      if (!isNaN(prevCrs)) {
-        const diff = currentCrs - prevCrs
-        return {
-          diff,
-          formatted: diff > 0 ? `+${diff}` : `${diff}`,
-          prevDrawNumber: prevDraw.drawNumber,
-          prevCrs: prevDraw.crs,
-        }
-      }
-    }
-  }
-
-  return null
-}
 
 export function DrawsSection() {
   const [selectedClass, setSelectedClass] = useState<ClassCode | typeof ALL>(ALL)
@@ -114,7 +70,7 @@ export function DrawsSection() {
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {displayedDraws.map((draw) => {
-              const change = getCrsChange(draw, sortedAllDraws)
+              const change = getCrsChangeForDraw(draw, sortedAllDraws)
               return (
                 <tr key={draw.drawNumber} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
                   <td className="py-3 pr-4 font-mono font-semibold text-slate-900 dark:text-slate-100">

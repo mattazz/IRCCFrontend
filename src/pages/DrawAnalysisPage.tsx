@@ -16,6 +16,7 @@ import { useApiData } from '../hooks/useApiData'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { Section } from '../components/Section'
 import { filterDrawsByClass } from '../utils/draws'
+import { getCrsChangeForDraw, type CrsChangeInfo } from '../utils/crsChange'
 import { computeRollingAverage } from '../utils/rollingAverage'
 import { sortByDate, filterByDateRange } from '../utils/dateOrder'
 import { drawsToCsv } from '../utils/csv'
@@ -98,40 +99,6 @@ function StatTile({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   )
-}
-
-interface CrsChangeInfo {
-  diff: number
-  formatted: string
-  prevDrawNumber: string
-  prevCrs: string
-}
-
-function getCrsChangeForDraw(draw: TaggedDraw, allDrawsSortedDesc: Draw[]): CrsChangeInfo | null {
-  const crsNum = Number(draw.crs)
-  if (isNaN(crsNum)) return null
-
-  const targetCategory = draw.matchedClassCode
-  const currentIndex = allDrawsSortedDesc.findIndex((d) => d.drawNumber === draw.drawNumber)
-  if (currentIndex === -1) return null
-
-  for (let i = currentIndex + 1; i < allDrawsSortedDesc.length; i++) {
-    const prev = allDrawsSortedDesc[i]
-    if (filterDrawsByClass([prev], targetCategory).length > 0) {
-      const prevCrs = Number(prev.crs)
-      if (!isNaN(prevCrs)) {
-        const diff = crsNum - prevCrs
-        return {
-          diff,
-          formatted: diff > 0 ? `+${diff}` : `${diff}`,
-          prevDrawNumber: prev.drawNumber,
-          prevCrs: prev.crs,
-        }
-      }
-    }
-  }
-
-  return null
 }
 
 function DrawCard({ draw, change }: { draw: TaggedDraw; change: CrsChangeInfo | null }) {
@@ -558,7 +525,7 @@ export function DrawAnalysisPage() {
           </h3>
           <div className="grid max-h-[480px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
             {[...visibleDraws].reverse().map((draw) => {
-              const change = getCrsChangeForDraw(draw, allDrawsSortedDesc)
+              const change = getCrsChangeForDraw(draw, allDrawsSortedDesc, draw.matchedClassCode)
               return (
                 <DrawCard
                   key={`${draw.drawNumber}-${draw.matchedClassCode}`}
