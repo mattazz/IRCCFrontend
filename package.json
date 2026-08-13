@@ -6,13 +6,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "node server.js",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "express": "^4.22.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
