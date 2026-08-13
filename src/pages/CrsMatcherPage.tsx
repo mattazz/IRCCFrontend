@@ -65,6 +65,28 @@ export function CrsMatcherPage() {
     return computeDrawMatch(allDraws, score, selectedClass, timeframeMonths)
   }, [allDraws, score, selectedClass, timeframeMonths])
 
+  // Domain for the visual gauge below - spans whichever is wider, the user's score or the
+  // cutoff values, with padding, so the score pin and cutoff ticks share one coordinate
+  // system. Without this the pin position was computed from a fixed /700 scale that had no
+  // relationship to the cutoff markers, so moving the score just slid the whole bar instead
+  // of showing where it actually falls relative to the cutoffs.
+  const gaugeDomain = useMemo(() => {
+    const cutoffValues = [matchResult.minCutoff, matchResult.averageCutoff, matchResult.latestCutoff, matchResult.maxCutoff]
+      .filter((v): v is number => v !== null)
+    const values = [...cutoffValues, score]
+    const rawMin = Math.min(...values)
+    const rawMax = Math.max(...values)
+    const padding = Math.max(20, (rawMax - rawMin) * 0.15)
+    const min = Math.max(0, rawMin - padding)
+    const max = rawMax + padding
+    return { min, max }
+  }, [matchResult.minCutoff, matchResult.averageCutoff, matchResult.latestCutoff, matchResult.maxCutoff, score])
+
+  const toGaugePercent = (value: number) =>
+    Math.max(0, Math.min(100, ((value - gaugeDomain.min) / (gaugeDomain.max - gaugeDomain.min)) * 100))
+
+  const scoreAboveAverageCutoff = (matchResult.scoreGapAverage ?? 0) >= 0
+
   const latestPoolDraw = useMemo(() => {
     return [...allDraws].reverse().find((d) => {
       const rawTotal = d.poolTotal || ((d as unknown as Record<string, unknown>).dd18 as string)
@@ -405,36 +427,87 @@ export function CrsMatcherPage() {
               </h4>
               <div className="space-y-6 pt-2">
                 {/* Visual Bar */}
-                <div className="relative h-6 w-full rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  {/* Fill up to user score percentage */}
+                <div className="relative pt-9">
+                  {/* Score label - floats above the track so it never covers the cutoff zone/ticks */}
                   <div
-                    className="h-full rounded-full bg-brand-500/30 transition-all duration-300"
-                    style={{ width: `${Math.max(5, Math.min(100, (score / 700) * 100))}%` }}
-                  />
-                  {/* Indicator Pin */}
-                  <div
-                    className="absolute -top-3 bottom-0 flex flex-col items-center transition-all duration-300"
-                    style={{ left: `${Math.max(2, Math.min(95, (score / 700) * 100))}%` }}
+                    className="absolute top-0 flex -translate-x-1/2 flex-col items-center transition-all duration-300"
+                    style={{ left: `${Math.max(8, Math.min(92, toGaugePercent(score)))}%` }}
                   >
-                    <div className="h-12 w-1 bg-brand-600 dark:bg-brand-400 rounded-full" />
-                    <span className="mt-1 rounded-md bg-brand-600 px-2 py-0.5 font-mono text-xs font-bold text-white shadow-xs">
+                    <span
+                      className={`rounded-md px-2 py-0.5 font-mono text-xs font-bold text-white shadow-xs ${
+                        scoreAboveAverageCutoff ? 'bg-emerald-600' : 'bg-brand-600'
+                      }`}
+                    >
                       You: {score}
                     </span>
+                    <div className={`h-3 w-0.5 ${scoreAboveAverageCutoff ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-brand-600 dark:bg-brand-400'}`} />
+                  </div>
+
+                  <div className="relative h-6 w-full rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    {/* Historic cutoff range - colour overlay spanning min -> max cutoff */}
+                    {matchResult.minCutoff !== null && matchResult.maxCutoff !== null && (
+                      <div
+                        className="absolute top-0 bottom-0 rounded-full bg-sky-500/20 dark:bg-sky-400/20"
+                        style={{
+                          left: `${toGaugePercent(matchResult.minCutoff)}%`,
+                          width: `${toGaugePercent(matchResult.maxCutoff) - toGaugePercent(matchResult.minCutoff)}%`,
+                        }}
+                        title={`Historic cutoff range: ${matchResult.minCutoff}-${matchResult.maxCutoff}`}
+                      />
+                    )}
+                    {/* Cutoff tick marks - each its own colour so they stay distinguishable even when close together */}
+                    {matchResult.minCutoff !== null && (
+                      <div
+                        className="absolute -top-1 -bottom-1 w-0.5 bg-slate-400 dark:bg-slate-500"
+                        style={{ left: `${toGaugePercent(matchResult.minCutoff)}%` }}
+                        title={`Minimum cutoff: ${matchResult.minCutoff}`}
+                      />
+                    )}
+                    {matchResult.averageCutoff !== null && (
+                      <div
+                        className="absolute -top-1 -bottom-1 w-0.5 bg-amber-500 dark:bg-amber-400"
+                        style={{ left: `${toGaugePercent(matchResult.averageCutoff)}%` }}
+                        title={`Average cutoff: ${matchResult.averageCutoff}`}
+                      />
+                    )}
+                    {matchResult.latestCutoff !== null && (
+                      <div
+                        className="absolute -top-1 -bottom-1 w-0.5 bg-violet-500 dark:bg-violet-400"
+                        style={{ left: `${toGaugePercent(matchResult.latestCutoff)}%` }}
+                        title={`Latest cutoff: ${matchResult.latestCutoff}`}
+                      />
+                    )}
+                    {/* Score marker - precise dot on the track, label lives above */}
+                    <div
+                      className={`absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-xs transition-all duration-300 dark:border-slate-900 ${
+                        scoreAboveAverageCutoff ? 'bg-emerald-600 dark:bg-emerald-400' : 'bg-brand-600 dark:bg-brand-400'
+                      }`}
+                      style={{ left: `${toGaugePercent(score)}%` }}
+                    />
                   </div>
                 </div>
 
                 {/* Benchmark Markers */}
                 <div className="grid grid-cols-3 text-center text-xs border-t border-slate-100 pt-3 dark:border-slate-800">
                   <div>
-                    <span className="block text-slate-400 font-medium">Minimum Cutoff</span>
+                    <span className="flex items-center justify-center gap-1.5 text-slate-400 font-medium">
+                      <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-500" />
+                      Minimum Cutoff
+                    </span>
                     <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{matchResult.minCutoff ?? 'N/A'}</span>
                   </div>
                   <div>
-                    <span className="block text-slate-400 font-medium">Average Cutoff</span>
+                    <span className="flex items-center justify-center gap-1.5 text-slate-400 font-medium">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 dark:bg-amber-400" />
+                      Average Cutoff
+                    </span>
                     <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{matchResult.averageCutoff ?? 'N/A'}</span>
                   </div>
                   <div>
-                    <span className="block text-slate-400 font-medium">Latest Cutoff</span>
+                    <span className="flex items-center justify-center gap-1.5 text-slate-400 font-medium">
+                      <span className="h-2 w-2 rounded-full bg-violet-500 dark:bg-violet-400" />
+                      Latest Cutoff
+                    </span>
                     <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{matchResult.latestCutoff ?? 'N/A'}</span>
                   </div>
                 </div>
